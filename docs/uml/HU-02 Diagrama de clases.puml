@@ -1,0 +1,90 @@
+@startuml
+title HU-02 - Agregar productos al carrito - Diagrama de Clases
+
+class Producto {
+    - idProducto : int
+    - nombre : String
+    - precio : decimal
+    - stock : int
+    - estado : String
+
+    + verificarDisponibilidad(cantidad : int) : boolean
+}
+
+class Carrito {
+    - idCarrito : int
+    - fechaCreacion : Date
+    - estado : String
+    - total : decimal
+
+    + agregarProducto(producto : Producto, cantidad : int) : void
+    + modificarCantidad(idProducto : int, cantidad : int) : void
+    + eliminarProducto(idProducto : int) : void
+    + calcularSubtotal(item : ItemCarrito) : decimal
+    + calcularTotal() : decimal
+    + vaciar() : void
+}
+
+class ItemCarrito {
+    - idItem : int
+    - cantidad : int
+    - precioUnitario : decimal
+    - subtotal : decimal
+
+    + calcularSubtotal() : decimal
+    + actualizarCantidad(cantidad : int) : void
+}
+
+class CarritoController {
+    + agregarProducto(idProducto : int, cantidad : int) : void
+    + modificarCantidad(idProducto : int, cantidad : int) : void
+    + eliminarProducto(idProducto : int) : void
+    + consultarCarrito() : Carrito
+}
+
+class CarritoService {
+    + agregarProducto(idProducto : int, cantidad : int) : void
+    + validarStock(idProducto : int, cantidad : int) : boolean
+    + modificarCantidad(idProducto : int, cantidad : int) : void
+    + eliminarProducto(idProducto : int) : void
+    + calcularTotal() : decimal
+}
+
+class CarritoRepository {
+    + obtenerCarrito(idCarrito : int) : Carrito
+    + guardar(carrito : Carrito) : void
+    + actualizar(carrito : Carrito) : void
+}
+
+class ProductoRepository {
+    + buscarPorId(idProducto : int) : Producto
+    + consultarStock(idProducto : int) : int
+}
+
+class CarritoView {
+    + mostrarCarrito(carrito : Carrito) : void
+    + mostrarConfirmacion() : void
+    + mostrarErrorStock() : void
+    + actualizarTotal(total : decimal) : void
+}
+
+class Cliente {
+    - idCliente : int
+    - nombre : String
+    - email : String
+
+    + consultarCarrito() : Carrito
+}
+
+Cliente "1" -- "0..1" Carrito : posee
+
+Carrito "1" *-- "1..*" ItemCarrito : contiene
+ItemCarrito "*" --> "1" Producto : referencia
+
+CarritoController --> CarritoService : utiliza
+CarritoService --> CarritoRepository : utiliza
+CarritoService --> ProductoRepository : consulta
+CarritoService --> Carrito : gestiona
+CarritoView --> CarritoController : solicita
+
+@enduml

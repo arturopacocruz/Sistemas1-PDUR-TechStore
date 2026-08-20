@@ -1,0 +1,84 @@
+@startuml
+title HU-03 - Realizar pedido - Diagrama de Secuencia
+
+actor "Cliente" as Cliente
+
+boundary "Interfaz de Pedido" as UI
+control "PedidoController" as Controller
+control "PedidoService" as Service
+entity "Carrito" as Carrito
+entity "Pedido" as Pedido
+database "Base de Datos" as DB
+
+Cliente -> UI : Selecciona "Realizar pedido"
+
+UI -> Controller : iniciarPedido()
+
+Controller -> Service : obtenerCarrito()
+
+Service -> DB : Consultar carrito
+DB --> Service : Datos del carrito
+
+alt Carrito vacío
+
+    Service --> Controller : Carrito vacío
+    Controller --> UI : Mostrar mensaje
+    UI --> Cliente : "El carrito está vacío"
+
+else Carrito con productos
+
+    Service --> Controller : Carrito con productos
+    Controller --> UI : Mostrar resumen
+
+    UI --> Cliente : Solicitar datos de entrega
+
+    Cliente -> UI : Ingresa datos de entrega
+    UI -> Controller : confirmarPedido(datosEntrega)
+
+    Controller -> Service : validarDatos(datosEntrega)
+
+    alt Datos inválidos
+
+        Service --> Controller : Datos inválidos
+        Controller --> UI : Mostrar errores
+        UI --> Cliente : Corregir datos de entrega
+
+    else Datos válidos
+
+        Service -> DB : Verificar stock de productos
+        DB --> Service : Disponibilidad
+
+        alt Stock insuficiente
+
+            Service --> Controller : Stock insuficiente
+            Controller --> UI : Mostrar error
+            UI --> Cliente : "Producto sin stock"
+
+        else Stock disponible
+
+            Service -> Carrito : calcularTotal()
+            Carrito --> Service : Total
+
+            Service -> Pedido : crearPedido()
+            Pedido -> Pedido : Asignar datos del cliente
+            Pedido -> Pedido : Asignar datos de entrega
+            Pedido -> Pedido : Asignar productos
+            Pedido -> Pedido : Asignar total
+            Pedido -> Pedido : Generar número de pedido
+
+            Service -> DB : Guardar pedido
+            DB --> Service : Pedido registrado
+
+            Service -> DB : Actualizar stock
+            DB --> Service : Stock actualizado
+
+            Service --> Controller : Pedido confirmado
+            Controller --> UI : Mostrar confirmación
+
+            UI --> Cliente : Mostrar número de pedido\n+ resumen de compra
+
+        end
+    end
+end
+
+@enduml

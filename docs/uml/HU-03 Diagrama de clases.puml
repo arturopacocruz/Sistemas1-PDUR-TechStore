@@ -1,0 +1,129 @@
+@startuml
+title HU-03 - Realizar pedido - Diagrama de Clases
+
+class Cliente {
+    - idCliente : int
+    - nombre : String
+    - email : String
+    - telefono : String
+
+    + realizarPedido() : Pedido
+}
+
+class DireccionEntrega {
+    - idDireccion : int
+    - nombreReceptor : String
+    - direccion : String
+    - ciudad : String
+    - telefono : String
+
+    + validar() : boolean
+}
+
+class Pedido {
+    - idPedido : int
+    - numeroPedido : String
+    - fecha : Date
+    - estado : String
+    - total : decimal
+
+    + crear() : void
+    + calcularTotal() : decimal
+    + confirmar() : void
+    + rechazar() : void
+}
+
+class DetallePedido {
+    - idDetalle : int
+    - cantidad : int
+    - precioUnitario : decimal
+    - subtotal : decimal
+
+    + calcularSubtotal() : decimal
+}
+
+class Carrito {
+    - idCarrito : int
+    - estado : String
+    - total : decimal
+
+    + calcularTotal() : decimal
+    + estaVacio() : boolean
+}
+
+class ItemCarrito {
+    - idItem : int
+    - cantidad : int
+    - precioUnitario : decimal
+    - subtotal : decimal
+
+    + calcularSubtotal() : decimal
+}
+
+class Producto {
+    - idProducto : int
+    - nombre : String
+    - precio : decimal
+    - stock : int
+    - estado : String
+
+    + verificarDisponibilidad(cantidad : int) : boolean
+    + actualizarStock(cantidad : int) : void
+}
+
+class PedidoController {
+    + iniciarPedido() : void
+    + validarDatos(datos : DireccionEntrega) : boolean
+    + confirmarPedido(datos : DireccionEntrega) : Pedido
+}
+
+class PedidoService {
+    + obtenerCarrito(idCliente : int) : Carrito
+    + validarDatos(datos : DireccionEntrega) : boolean
+    + verificarStock(carrito : Carrito) : boolean
+    + crearPedido(carrito : Carrito, datos : DireccionEntrega) : Pedido
+    + actualizarStock(pedido : Pedido) : void
+}
+
+class PedidoRepository {
+    + guardar(pedido : Pedido) : void
+    + buscarPorId(idPedido : int) : Pedido
+    + generarNumeroPedido() : String
+}
+
+class ProductoRepository {
+    + consultarStock(idProducto : int) : int
+    + actualizarStock(idProducto : int, cantidad : int) : void
+}
+
+class PedidoView {
+    + mostrarResumen(carrito : Carrito) : void
+    + mostrarFormularioEntrega() : void
+    + mostrarErrores() : void
+    + mostrarConfirmacion(pedido : Pedido) : void
+}
+
+
+Cliente "1" --> "0..*" Pedido : realiza
+
+Cliente "1" --> "0..1" Carrito : posee
+
+Pedido "1" *-- "1..*" DetallePedido : contiene
+
+DetallePedido "*" --> "1" Producto : referencia
+
+Carrito "1" *-- "0..*" ItemCarrito : contiene
+
+ItemCarrito "*" --> "1" Producto : referencia
+
+Pedido "1" --> "1" DireccionEntrega : utiliza
+
+PedidoController --> PedidoService : utiliza
+PedidoService --> PedidoRepository : utiliza
+PedidoService --> ProductoRepository : utiliza
+PedidoService --> Pedido : gestiona
+PedidoService --> Carrito : consulta
+
+PedidoView --> PedidoController : solicita
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+title HU-02 - Agregar productos al carrito - Diagrama de Estados
+
+[*] --> Vacio
+
+Vacio --> ConProductos : Agregar producto
+
+ConProductos --> ConProductos : Agregar otro producto
+ConProductos --> ConProductos : Modificar cantidad
+ConProductos --> ConProductos : Eliminar producto\nsi quedan productos
+
+ConProductos --> Vacio : Eliminar último producto
+
+ConProductos --> Confirmado : Confirmar compra
+
+Confirmado --> [*]
+
+Vacio : Sin productos
+Vacio : Total = 0
+
+ConProductos : Contiene uno o más productos
+ConProductos : Total actualizado
+
+Confirmado : Carrito listo para generar pedido
+
+@enduml

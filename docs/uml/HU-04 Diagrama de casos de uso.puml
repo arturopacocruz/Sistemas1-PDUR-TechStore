@@ -1,0 +1,51 @@
+@startuml
+title HU-04 - Gestionar productos - Diagrama de Casos de Uso
+
+left to right direction
+
+actor "Administrador" as Admin
+
+rectangle "Sistema TechStore" {
+
+    usecase "Gestionar productos" as UC1
+    usecase "Registrar producto" as UC2
+    usecase "Modificar producto" as UC3
+    usecase "Actualizar stock" as UC4
+    usecase "Desactivar producto" as UC5
+    usecase "Consultar productos" as UC6
+
+    usecase "Validar datos del\nproducto" as UC7
+    usecase "Guardar producto" as UC8
+    usecase "Actualizar información" as UC9
+    usecase "Confirmar desactivación" as UC10
+
+    usecase "Mostrar error de\nvalidación" as UC11
+    usecase "Mostrar producto\nduplicado" as UC12
+    usecase "Cancelar operación" as UC13
+}
+
+Admin --> UC1
+Admin --> UC6
+
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC3 : <<include>>
+UC1 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+
+UC2 ..> UC7 : <<include>>
+UC2 ..> UC8 : <<include>>
+
+UC3 ..> UC7 : <<include>>
+UC3 ..> UC9 : <<include>>
+
+UC4 ..> UC7 : <<include>>
+
+UC5 ..> UC10 : <<include>>
+
+UC11 ..> UC7 : <<extend>>
+UC12 ..> UC8 : <<extend>>
+UC13 ..> UC2 : <<extend>>
+UC13 ..> UC3 : <<extend>>
+UC13 ..> UC5 : <<extend>>
+
+@enduml

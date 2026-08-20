@@ -1,0 +1,62 @@
+@startuml
+title HU-01 - Consultar productos - Diagrama de Clases
+
+class Producto {
+    - idProducto : int
+    - nombre : String
+    - descripcion : String
+    - precio : decimal
+    - stock : int
+    - imagen : String
+    - estado : String
+    - categoria : Categoria
+
+    + consultarDetalle() : Producto
+    + verificarDisponibilidad() : boolean
+    + estaAgotado() : boolean
+}
+
+class Categoria {
+    - idCategoria : int
+    - nombre : String
+    - descripcion : String
+
+    + obtenerProductos() : List<Producto>
+}
+
+class ProductoController {
+    + listarProductos() : List<Producto>
+    + buscarPorNombre(nombre : String) : List<Producto>
+    + filtrarPorCategoria(idCategoria : int) : List<Producto>
+    + obtenerDetalle(idProducto : int) : Producto
+    + verificarStock(idProducto : int) : boolean
+}
+
+class ProductoService {
+    + obtenerTodos() : List<Producto>
+    + buscar(nombre : String) : List<Producto>
+    + obtenerPorCategoria(idCategoria : int) : List<Producto>
+    + obtenerPorId(idProducto : int) : Producto
+}
+
+class ProductoRepository {
+    + findAll() : List<Producto>
+    + findByNombre(nombre : String) : List<Producto>
+    + findByCategoria(idCategoria : int) : List<Producto>
+    + findById(idProducto : int) : Producto
+}
+
+class CatalogoView {
+    + mostrarProductos(productos : List<Producto>) : void
+    + mostrarDetalle(producto : Producto) : void
+    + mostrarSinResultados() : void
+    + mostrarDisponibilidad(disponible : boolean) : void
+}
+
+Categoria "1" <-- "0..*" Producto : pertenece
+ProductoController --> ProductoService : utiliza
+ProductoService --> ProductoRepository : utiliza
+ProductoService --> Producto : gestiona
+CatalogoView --> ProductoController : solicita
+
+@enduml

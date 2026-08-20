@@ -1,0 +1,83 @@
+@startuml
+title HU-02 - Agregar productos al carrito - Diagrama de Secuencia
+
+actor "Cliente" as Cliente
+
+boundary "Interfaz del Catálogo" as UI
+control "CarritoController" as Controller
+control "CarritoService" as Service
+entity "Producto" as Producto
+entity "Carrito" as Carrito
+database "Base de Datos" as DB
+
+Cliente -> UI : Selecciona producto
+UI -> UI : Mostrar formulario de cantidad
+
+Cliente -> UI : Ingresa cantidad
+UI -> Controller : agregarProducto(idProducto, cantidad)
+
+Controller -> Service : validarYAgregar(idProducto, cantidad)
+
+Service -> DB : Consultar producto y stock
+DB --> Service : Datos del producto y stock
+
+alt Producto no disponible
+
+    Service --> Controller : Producto agotado
+    Controller --> UI : Mostrar producto agotado
+    UI --> Cliente : "Producto no disponible"
+
+else Stock insuficiente
+
+    Service --> Controller : Stock insuficiente
+    Controller --> UI : Mostrar error de stock
+    UI --> Cliente : "Cantidad no disponible"
+
+else Stock disponible
+
+    Service -> Carrito : agregarProducto(producto, cantidad)
+    Carrito -> Carrito : Calcular subtotal
+    Carrito -> Carrito : Calcular total
+
+    Service -> DB : Guardar carrito
+    DB --> Service : Carrito actualizado
+
+    Service --> Controller : Carrito actualizado
+    Controller --> UI : Mostrar confirmación
+
+    UI --> Cliente : Producto agregado al carrito
+
+end
+
+== Modificar cantidad ==
+
+Cliente -> UI : Modifica cantidad
+UI -> Controller : modificarCantidad(idProducto, nuevaCantidad)
+
+Controller -> Service : validarCantidad(idProducto, nuevaCantidad)
+
+Service -> DB : Consultar stock
+DB --> Service : Stock disponible
+
+alt Cantidad válida
+
+    Service -> Carrito : Actualizar cantidad
+    Carrito -> Carrito : Recalcular subtotal
+    Carrito -> Carrito : Recalcular total
+
+    Service -> DB : Guardar cambios
+    DB --> Service : Carrito actualizado
+
+    Service --> Controller : Nuevo total
+    Controller --> UI : Actualizar carrito
+    UI --> Cliente : Mostrar nuevo total
+
+else Cantidad superior al stock
+
+    Service --> Controller : Error de stock
+    Controller --> UI : Mostrar mensaje
+    UI --> Cliente : "Stock insuficiente"
+
+end
+
+@enduml

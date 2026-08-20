@@ -1,0 +1,40 @@
+@startuml
+title HU-03 - Realizar pedido - Diagrama de Casos de Uso
+
+left to right direction
+
+actor "Cliente" as Cliente
+
+rectangle "Sistema TechStore" {
+
+    usecase "Realizar pedido" as UC1
+    usecase "Consultar carrito" as UC2
+    usecase "Ingresar datos\nde entrega" as UC3
+    usecase "Validar datos\nde entrega" as UC4
+    usecase "Verificar stock" as UC5
+    usecase "Calcular total\ndel pedido" as UC6
+    usecase "Confirmar pedido" as UC7
+    usecase "Generar número\nde pedido" as UC8
+    usecase "Mostrar confirmación" as UC9
+
+    usecase "Mostrar carrito vacío" as UC10
+    usecase "Mostrar error de\nvalidación" as UC11
+    usecase "Mostrar error de\nstock" as UC12
+}
+
+Cliente --> UC1
+
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC3 : <<include>>
+UC1 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+UC1 ..> UC6 : <<include>>
+UC1 ..> UC7 : <<include>>
+UC7 ..> UC8 : <<include>>
+UC7 ..> UC9 : <<include>>
+
+UC10 ..> UC2 : <<extend>>
+UC11 ..> UC4 : <<extend>>
+UC12 ..> UC5 : <<extend>>
+
+@enduml

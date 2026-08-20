@@ -1,0 +1,146 @@
+@startuml
+title HU-04 - Gestionar productos - Diagrama de Secuencia
+
+actor "Administrador" as Admin
+
+boundary "Panel Administrativo" as UI
+control "ProductoController" as Controller
+control "ProductoService" as Service
+entity "Producto" as Producto
+database "Base de Datos" as DB
+
+== Registrar producto ==
+
+Admin -> UI : Selecciona "Nuevo producto"
+
+UI --> Admin : Mostrar formulario
+
+Admin -> UI : Ingresa datos del producto
+
+UI -> Controller : registrarProducto(datos)
+
+Controller -> Service : validarDatos(datos)
+
+alt Datos inválidos
+
+    Service --> Controller : Datos inválidos
+    Controller --> UI : Mostrar errores
+    UI --> Admin : Corregir información
+
+else Datos válidos
+
+    Service -> DB : Verificar producto existente
+    DB --> Service : Resultado
+
+    alt Producto duplicado
+
+        Service --> Controller : Producto existente
+        Controller --> UI : Mostrar error
+        UI --> Admin : "El producto ya existe"
+
+    else Producto disponible
+
+        Service -> Producto : crear(datos)
+        Service -> DB : Guardar producto
+        DB --> Service : Producto registrado
+
+        Service --> Controller : Registro exitoso
+        Controller --> UI : Mostrar confirmación
+        UI --> Admin : "Producto registrado"
+
+    end
+end
+
+
+== Modificar producto ==
+
+Admin -> UI : Selecciona producto
+
+UI -> Controller : obtenerProducto(idProducto)
+Controller -> Service : consultarProducto(idProducto)
+Service -> DB : Buscar producto
+DB --> Service : Datos del producto
+Service --> Controller : Producto
+Controller --> UI : Mostrar formulario
+
+Admin -> UI : Modifica información
+
+UI -> Controller : actualizarProducto(datos)
+
+Controller -> Service : validarDatos(datos)
+
+alt Datos inválidos
+
+    Service --> Controller : Error de validación
+    Controller --> UI : Mostrar errores
+    UI --> Admin : Corregir información
+
+else Datos válidos
+
+    Service -> DB : Actualizar producto
+    DB --> Service : Cambios guardados
+
+    Service --> Controller : Actualización exitosa
+    Controller --> UI : Mostrar confirmación
+    UI --> Admin : "Producto actualizado"
+
+end
+
+
+== Actualizar stock ==
+
+Admin -> UI : Selecciona "Actualizar stock"
+
+UI --> Admin : Solicitar nueva cantidad
+
+Admin -> UI : Ingresa cantidad
+
+UI -> Controller : actualizarStock(idProducto, cantidad)
+
+Controller -> Service : validarStock(cantidad)
+
+alt Cantidad inválida
+
+    Service --> Controller : Stock inválido
+    Controller --> UI : Mostrar error
+    UI --> Admin : Ingresar cantidad válida
+
+else Cantidad válida
+
+    Service -> DB : Actualizar stock
+    DB --> Service : Stock actualizado
+
+    Service --> Controller : Actualización exitosa
+    Controller --> UI : Mostrar confirmación
+    UI --> Admin : "Stock actualizado"
+
+end
+
+
+== Desactivar producto ==
+
+Admin -> UI : Selecciona "Desactivar producto"
+
+UI --> Admin : Solicitar confirmación
+
+alt Administrador cancela
+
+    Admin -> UI : Cancelar
+    UI --> Admin : Regresar al catálogo
+
+else Administrador confirma
+
+    UI -> Controller : desactivarProducto(idProducto)
+
+    Controller -> Service : desactivar(idProducto)
+
+    Service -> DB : Cambiar estado a INACTIVO
+    DB --> Service : Producto actualizado
+
+    Service --> Controller : Desactivación exitosa
+    Controller --> UI : Mostrar confirmación
+    UI --> Admin : "Producto desactivado"
+
+end
+
+@enduml

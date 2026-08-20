@@ -1,0 +1,33 @@
+@startuml
+title HU-03 - Realizar pedido - Diagrama de Estados
+
+[*] --> Pendiente : Cliente confirma pedido
+
+Pendiente --> Validando : Validar datos y stock
+
+Validando --> Rechazado : Datos inválidos
+Validando --> Rechazado : Stock insuficiente
+
+Validando --> Confirmado : Datos y stock válidos
+
+Confirmado --> Preparando : Pedido aceptado
+
+Preparando --> Entregado : Pedido entregado
+
+Rechazado --> [*]
+Entregado --> [*]
+
+Pendiente : Pedido creado
+Pendiente : Esperando validación
+
+Validando : Verificando información
+
+Rechazado : Pedido no procesado
+
+Confirmado : Número de pedido generado
+
+Preparando : Pedido en preparación
+
+Entregado : Compra completada
+
+@enduml

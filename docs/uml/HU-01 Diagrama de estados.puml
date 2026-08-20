@@ -1,0 +1,23 @@
+@startuml
+title HU-01 - Consultar productos - Diagrama de Estados
+
+[*] --> Disponible : Producto creado\ncon stock > 0
+
+Disponible --> Agotado : Stock = 0
+Agotado --> Disponible : Stock > 0
+
+Disponible --> Inactivo : Producto desactivado
+Agotado --> Inactivo : Producto desactivado
+
+Inactivo --> Disponible : Producto reactivado\ncon stock > 0
+Inactivo --> Agotado : Producto reactivado\nsin stock
+
+Disponible : Puede mostrarse en catálogo
+Disponible : Puede agregarse al carrito
+
+Agotado : Se muestra como "Agotado"
+Agotado : No puede agregarse al carrito
+
+Inactivo : No aparece en el catálogo
+
+@enduml

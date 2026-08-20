@@ -1,0 +1,93 @@
+@startuml
+title HU-04 - Gestionar productos - Diagrama de Clases
+
+class Administrador {
+    - idAdministrador : int
+    - nombre : String
+    - email : String
+
+    + registrarProducto() : void
+    + modificarProducto() : void
+    + actualizarStock() : void
+    + desactivarProducto() : void
+}
+
+class Producto {
+    - idProducto : int
+    - nombre : String
+    - descripcion : String
+    - precio : decimal
+    - stock : int
+    - imagen : String
+    - estado : String
+    - fechaCreacion : Date
+    - fechaActualizacion : Date
+
+    + crear() : void
+    + actualizar() : void
+    + actualizarStock(cantidad : int) : void
+    + desactivar() : void
+    + reactivar() : void
+    + verificarDisponibilidad() : boolean
+}
+
+class Categoria {
+    - idCategoria : int
+    - nombre : String
+    - descripcion : String
+    - estado : String
+
+    + crear() : void
+    + actualizar() : void
+}
+
+class ProductoController {
+    + listarProductos() : List<Producto>
+    + obtenerProducto(idProducto : int) : Producto
+    + registrarProducto(datos : Producto) : void
+    + actualizarProducto(datos : Producto) : void
+    + actualizarStock(idProducto : int, cantidad : int) : void
+    + desactivarProducto(idProducto : int) : void
+}
+
+class ProductoService {
+    + listarProductos() : List<Producto>
+    + obtenerProducto(idProducto : int) : Producto
+    + validarDatos(producto : Producto) : boolean
+    + registrarProducto(producto : Producto) : void
+    + actualizarProducto(producto : Producto) : void
+    + actualizarStock(idProducto : int, cantidad : int) : void
+    + desactivarProducto(idProducto : int) : void
+    + verificarDuplicado(nombre : String) : boolean
+}
+
+class ProductoRepository {
+    + findAll() : List<Producto>
+    + findById(idProducto : int) : Producto
+    + findByNombre(nombre : String) : Producto
+    + save(producto : Producto) : void
+    + update(producto : Producto) : void
+    + updateStock(idProducto : int, cantidad : int) : void
+    + deactivate(idProducto : int) : void
+}
+
+class AdministradorView {
+    + mostrarProductos(productos : List<Producto>) : void
+    + mostrarFormulario() : void
+    + mostrarProducto(producto : Producto) : void
+    + mostrarConfirmacion() : void
+    + mostrarError(mensaje : String) : void
+}
+
+Administrador "1" --> "0..*" Producto : gestiona
+
+Categoria "1" <-- "0..*" Producto : pertenece
+
+ProductoController --> ProductoService : utiliza
+ProductoService --> ProductoRepository : utiliza
+ProductoService --> Producto : gestiona
+ProductoService --> Categoria : consulta
+
+AdministradorView --> ProductoController : solicita
+
+@enduml

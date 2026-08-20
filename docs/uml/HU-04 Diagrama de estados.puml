@@ -1,0 +1,27 @@
+@startuml
+title HU-04 - Gestionar productos - Diagrama de Estados
+
+[*] --> Activo : Registrar producto
+
+Activo --> Activo : Modificar información
+Activo --> Activo : Actualizar stock
+
+Activo --> Agotado : Stock = 0
+
+Agotado --> Activo : Stock > 0
+
+Activo --> Inactivo : Desactivar producto
+Agotado --> Inactivo : Desactivar producto
+
+Inactivo --> Activo : Reactivar producto
+
+Activo : Producto visible en catálogo
+Activo : Puede ser comprado
+
+Agotado : Producto visible
+Agotado : No puede ser comprado
+
+Inactivo : Producto no visible
+Inactivo : Conserva historial
+
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+title HU-01 - Consultar productos - Diagrama de Casos de Uso
+
+left to right direction
+
+actor "Cliente" as Cliente
+
+rectangle "Sistema TechStore" {
+
+    usecase "Consultar catálogo" as UC1
+    usecase "Buscar producto" as UC2
+    usecase "Filtrar por categoría" as UC3
+    usecase "Ver detalle del producto" as UC4
+    usecase "Consultar disponibilidad" as UC5
+    usecase "Mostrar productos\nagotados" as UC6
+    usecase "Mostrar mensaje\nsin resultados" as UC7
+}
+
+Cliente --> UC1
+Cliente --> UC2
+Cliente --> UC3
+Cliente --> UC4
+
+UC4 ..> UC5 : <<include>>
+
+UC2 ..> UC7 : <<extend>>
+UC3 ..> UC7 : <<extend>>
+
+UC6 ..> UC4 : <<extend>>
+
+@enduml

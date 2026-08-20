@@ -1,0 +1,52 @@
+@startuml
+title HU-01 - Consultar productos - Diagrama de Secuencia
+
+actor "Cliente" as Cliente
+
+boundary "Interfaz de Catálogo" as UI
+control "ProductoController" as Controller
+entity "Producto" as Producto
+database "Base de Datos" as DB
+
+Cliente -> UI : Ingresa término de búsqueda
+UI -> Controller : buscarProducto(criterio)
+
+Controller -> Controller : Validar criterio de búsqueda
+
+alt Criterio válido
+
+    Controller -> DB : Consultar productos\npor nombre o categoría
+    DB --> Controller : Lista de productos
+
+    alt Existen resultados
+
+        Controller -> Producto : Obtener información\nrelevante
+        Producto --> Controller : Datos del producto
+
+        Controller --> UI : Mostrar productos
+        UI --> Cliente : Lista de productos\ncon precio y disponibilidad
+
+        Cliente -> UI : Selecciona producto
+        UI -> Controller : consultarDetalle(idProducto)
+
+        Controller -> DB : Consultar detalle y stock
+        DB --> Controller : Datos y disponibilidad
+
+        Controller --> UI : Mostrar detalle
+        UI --> Cliente : Nombre, descripción,\nprecio y disponibilidad
+
+    else No existen resultados
+
+        Controller --> UI : Resultado vacío
+        UI --> Cliente : Mostrar "No se encontraron productos"
+
+    end
+
+else Criterio inválido o vacío
+
+    Controller --> UI : Solicitar criterio válido
+    UI --> Cliente : Mostrar mensaje de validación
+
+end
+
+@enduml
