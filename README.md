@@ -1,13 +1,16 @@
 # Sistemas1-PDUR-TechStore
+
 # TechStore — Diseño y Arquitectura
 
 ## Descripción
 
 En esta sección se presentan los principales diseños y elementos de arquitectura de información del proyecto **TechStore**, una tienda virtual de productos tecnológicos.
 
-Los diseños corresponden al MVP desarrollado y permiten visualizar la estructura de navegación y las principales interfaces del sistema.
+Los diseños corresponden al MVP desarrollado y permiten visualizar la estructura de navegación, las principales interfaces del sistema y el diseño detallado de la arquitectura de software.
 
 ---
+
+# Diseño de la Interfaz y Arquitectura de Información
 
 ## 1. Arquitectura de Navegación
 
@@ -46,3 +49,196 @@ El reporte visual corresponde al panel administrativo de TechStore.
 Presenta información resumida sobre la cantidad de productos, disponibilidad de stock y pedidos, además de gráficos y una lista de productos con stock bajo. Su objetivo es facilitar al administrador la interpretación rápida del estado del catálogo.
 
 ![Reporte visual](<docs/design/Reporte visual.PNG>)
+
+
+---
+
+# Diseño Detallado
+
+La documentación técnica del proyecto se encuentra organizada dentro de la carpeta `/docs/uml/`.
+
+Para cada Historia de Usuario del Sprint 1 se elaboraron cuatro diagramas UML utilizando **PlantUML**:
+
+- Diagrama de Casos de Uso
+- Diagrama de Secuencia
+- Diagrama de Estados
+- Diagrama de Clases
+
+Cada diagrama cuenta con su correspondiente archivo fuente `.puml` y su imagen exportada `.png`.
+
+---
+
+# HU-01 — Consultar productos
+
+> Como cliente, quiero consultar y buscar productos por nombre o categoría, visualizando su información, precio y disponibilidad, para encontrar fácilmente los artículos que deseo comprar.
+
+### Diagrama de Casos de Uso
+
+Representa las interacciones entre el cliente y las funcionalidades relacionadas con la consulta, búsqueda, filtrado y visualización de productos.
+
+![HU-01 - Diagrama de Casos de Uso](<docs/uml/HU-1 Diagrama de casos de uso.png>)
+
+### Diagrama de Secuencia
+
+Representa el flujo de mensajes entre el cliente, la interfaz, el controlador, los servicios y la base de datos durante la búsqueda y consulta de productos.
+
+![HU-01 - Diagrama de Secuencia](<docs/uml/HU-1 Diagrama de secuencia.png>)
+
+### Diagrama de Estados
+
+Representa los diferentes estados de disponibilidad de un producto, como disponible, agotado e inactivo.
+
+![HU-01 - Diagrama de Estados](<docs/uml/HU-1 Diagrama de estados.png>)
+
+### Diagrama de Clases
+
+Representa las principales clases utilizadas para consultar productos, incluyendo Producto, Categoría, Controller, Service, Repository y la interfaz del catálogo.
+
+![HU-01 - Diagrama de Clases](<docs/uml/HU-1 Diagrama de clases.png>)
+
+
+---
+
+# HU-02 — Agregar productos al carrito
+
+> Como cliente, quiero agregar productos disponibles al carrito, indicando y modificando las cantidades, para preparar mi compra y conocer el total antes de realizar el pedido.
+
+### Diagrama de Casos de Uso
+
+Representa las acciones que puede realizar el cliente sobre el carrito, incluyendo agregar productos, modificar cantidades, eliminar productos y consultar el total.
+
+![HU-02 - Diagrama de Casos de Uso](<docs/uml/HU-2 Diagrama de casos de uso.png>)
+
+### Diagrama de Secuencia
+
+Representa la interacción entre el cliente, la interfaz, el controlador, el servicio, el carrito, los productos y la base de datos al agregar o modificar productos.
+
+![HU-02 - Diagrama de Secuencia](<docs/uml/HU-2 Diagrama de secuencia.png>)
+
+### Diagrama de Estados
+
+Representa los estados del carrito durante el proceso de compra, desde un carrito vacío hasta un carrito con productos y su posterior confirmación.
+
+![HU-02 - Diagrama de Estados](<docs/uml/HU-2 Diagrama de estados.png>)
+
+### Diagrama de Clases
+
+Representa las clases relacionadas con el carrito, incluyendo Cliente, Carrito, ItemCarrito, Producto y las clases de la arquitectura de aplicación.
+
+![HU-02 - Diagrama de Clases](<docs/uml/HU-2 Diagrama de clases.png>)
+
+
+---
+
+# HU-03 — Realizar pedido
+
+> Como cliente, quiero confirmar los productos de mi carrito e ingresar mis datos de entrega para generar un pedido y recibir una confirmación con su número de identificación.
+
+### Diagrama de Casos de Uso
+
+Representa las funcionalidades necesarias para realizar un pedido, incluyendo la consulta del carrito, ingreso de datos, validación, verificación de stock y confirmación.
+
+![HU-03 - Diagrama de Casos de Uso](<docs/uml/HU-3 Diagrama de casos de uso.png>)
+
+### Diagrama de Secuencia
+
+Representa el flujo temporal para generar un pedido, incluyendo la validación de datos, comprobación de stock, creación del pedido y actualización del inventario.
+
+![HU-03 - Diagrama de Secuencia](<docs/uml/HU-3 Diagrama de secuencia.png>)
+
+### Diagrama de Estados
+
+Representa el ciclo de vida de un pedido desde que es creado y validado hasta su confirmación, preparación y entrega.
+
+![HU-03 - Diagrama de Estados](<docs/uml/HU-3 Diagrama de estados.png>)
+
+### Diagrama de Clases
+
+Representa las principales clases involucradas en la realización de pedidos, incluyendo Cliente, Pedido, DetallePedido, Carrito, Producto y DirecciónEntrega.
+
+![HU-03 - Diagrama de Clases](<docs/uml/HU-3 Diagrama de clases.png>)
+
+
+---
+
+# HU-04 — Gestionar productos
+
+> Como administrador, quiero crear, modificar y desactivar productos, gestionando su información, precio y stock, para mantener actualizado el catálogo de la tienda sin perder el historial de productos.
+
+### Diagrama de Casos de Uso
+
+Representa las operaciones disponibles para el administrador, incluyendo registrar, modificar, actualizar stock y desactivar productos.
+
+![HU-04 - Diagrama de Casos de Uso](<docs/uml/HU-4 Diagrama de casos de uso.png>)
+
+### Diagrama de Secuencia
+
+Representa las interacciones necesarias para registrar, modificar, actualizar el stock y desactivar productos, incluyendo las validaciones correspondientes.
+
+![HU-04 - Diagrama de Secuencia](<docs/uml/HU-4 Diagrama de secuencia.png>)
+
+### Diagrama de Estados
+
+Representa los estados de un producto dentro del catálogo, diferenciando entre activo, agotado e inactivo.
+
+![HU-04 - Diagrama de Estados](<docs/uml/HU-4 Diagrama de estados.png>)
+
+### Diagrama de Clases
+
+Representa la estructura de las clases necesarias para administrar el catálogo, incluyendo Administrador, Producto, Categoría, Controller, Service, Repository e interfaz administrativa.
+
+![HU-04 - Diagrama de Clases](<docs/uml/HU-4 Diagrama de clases.png>)
+
+
+---
+
+# Estructura de la documentación
+
+La documentación técnica del proyecto se organiza de la siguiente manera:
+
+```text
+/docs
+│
+├── /design
+│   ├── Arquitectura de navegación.png
+│   ├── Listado de productos.PNG
+│   ├── Formulario de registro de producto.PNG
+│   └── Reporte visual.PNG
+│
+└── /uml
+    │
+    ├── HU01_casos_de_uso.puml
+    ├── HU01_casos_de_uso.png
+    ├── HU01_secuencia.puml
+    ├── HU01_secuencia.png
+    ├── HU01_estados.puml
+    ├── HU01_estados.png
+    ├── HU01_clases.puml
+    ├── HU01_clases.png
+    │
+    ├── HU02_casos_de_uso.puml
+    ├── HU02_casos_de_uso.png
+    ├── HU02_secuencia.puml
+    ├── HU02_secuencia.png
+    ├── HU02_estados.puml
+    ├── HU02_estados.png
+    ├── HU02_clases.puml
+    ├── HU02_clases.png
+    │
+    ├── HU03_casos_de_uso.puml
+    ├── HU03_casos_de_uso.png
+    ├── HU03_secuencia.puml
+    ├── HU03_secuencia.png
+    ├── HU03_estados.puml
+    ├── HU03_estados.png
+    ├── HU03_clases.puml
+    ├── HU03_clases.png
+    │
+    ├── HU04_casos_de_uso.puml
+    ├── HU04_casos_de_uso.png
+    ├── HU04_secuencia.puml
+    ├── HU04_secuencia.png
+    ├── HU04_estados.puml
+    ├── HU04_estados.png
+    ├── HU04_clases.puml
+    └── HU04_clases.png
