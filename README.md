@@ -6,7 +6,7 @@
 
 En esta sección se presentan los principales diseños y elementos de arquitectura de información del proyecto **TechStore**, una tienda virtual de productos tecnológicos.
 
-Los diseños corresponden al MVP desarrollado y permiten visualizar la estructura de navegación, las principales interfaces del sistema y el diseño detallado de la arquitectura de software.
+Los diseños corresponden al MVP desarrollado y permiten visualizar la estructura de navegación, las principales interfaces del sistema, el diseño detallado de la arquitectura de software y el modelo de base de datos.
 
 ---
 
@@ -49,7 +49,6 @@ El reporte visual corresponde al panel administrativo de TechStore.
 Presenta información resumida sobre la cantidad de productos, disponibilidad de stock y pedidos, además de gráficos y una lista de productos con stock bajo. Su objetivo es facilitar al administrador la interpretación rápida del estado del catálogo.
 
 ![Reporte visual](<docs/design/Reporte visual.PNG>)
-
 
 ---
 
@@ -192,6 +191,26 @@ Representa la estructura de las clases necesarias para administrar el catálogo,
 
 ---
 
+# Diseño de Base de Datos
+
+La base de datos de **TechStore** permite almacenar y gestionar de manera estructurada la información necesaria para el funcionamiento del MVP.
+
+El modelo físico está compuesto por las entidades **Usuario, Categoría, Producto, Carrito, Item Carrito, Dirección de Entrega, Pedido y Detalle de Pedido**. Las relaciones entre estas entidades se implementan mediante **Claves Primarias (PK)** y **Claves Foráneas (FK)**, garantizando la integridad referencial de la información.
+
+La tabla `USUARIO` permite representar tanto a los clientes como a los administradores mediante el atributo `rol`, evitando la duplicación de información entre diferentes tipos de usuarios.
+
+El diseño también contempla las relaciones entre productos, categorías, carritos y pedidos, permitiendo gestionar el catálogo, las compras y la información de entrega de los clientes.
+
+El modelo ha sido diseñado considerando los principios de **normalización hasta la Tercera Forma Normal (3FN)**, con el objetivo de reducir redundancias y mantener la consistencia de los datos.
+
+### Diagrama de Base de Datos
+
+A continuación se presenta el modelo físico de la base de datos de TechStore, incluyendo las principales entidades, atributos, claves primarias y claves foráneas.
+
+![Diagrama de Base de Datos](<docs/database/Base de datos.png>)
+
+---
+
 # Estructura de la documentación
 
 La documentación técnica del proyecto se organiza de la siguiente manera:
@@ -204,6 +223,9 @@ La documentación técnica del proyecto se organiza de la siguiente manera:
 │   ├── Listado de productos.PNG
 │   ├── Formulario de registro de producto.PNG
 │   └── Reporte visual.PNG
+│
+├── /database
+│   └── Base de datos.png
 │
 └── /uml
     │
