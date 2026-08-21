@@ -225,7 +225,8 @@ La documentación técnica del proyecto se organiza de la siguiente manera:
 │   └── Reporte visual.PNG
 │
 ├── /database
-│   └── Base de datos.png
+│   ├── Base de datos.png
+│   └── Base de datos.sql
 │
 └── /uml
     │
