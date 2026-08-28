@@ -207,3 +207,44 @@ A continuación, las 4 Historias de Usuario fundamentales destiladas de las sesi
   * El precio debe ser `> 0` y el stock `>= 0`. No se permiten valores negativos.
   * Si un administrador desea dar de baja un producto, se usa la opción "Desactivar" (cambio de estado a `Inactivo`), no se elimina (DELETE) de la base de datos para no romper dependencias históricas con facturas o pedidos.
   * Se pueden modificar las propiedades e incrementar el stock en cualquier momento.
+
+---
+
+## 7. Marco Legal y Ética de Datos
+
+El diseño, arquitectura y operación de la plataforma TechStore en el Estado Plurinacional de Bolivia se fundamenta en el cumplimiento estricto del marco normativo nacional en materia de comercio electrónico, protección de datos personales, ciberseguridad y derechos del consumidor.
+
+### 7.1. Garantía del Derecho de Habeas Data y Derechos ARCO
+Conforme a los **Artículos 130 y 131 de la Constitución Política del Estado (CPE)** y los principios de autodeterminación informativa:
+
+1. **Derecho de Acceso y Portabilidad:** Todo usuario registrado puede visualizar en cualquier momento su perfil completo, direcciones de entrega guardadas y el historial íntegro de sus pedidos a través de su panel personal, con capacidad prevista de exportar sus datos en formatos interoperables y abiertos (`JSON` / `CSV`).
+2. **Derecho de Rectificación y Actualización:** El sistema permite al titular corregir o actualizar sus datos de contacto (teléfono, nombre, direcciones físicas) garantizando la exactitud de la información almacenada.
+3. **Derecho de Cancelación / Supresión ("Derecho al Olvido"):** El usuario puede solicitar la baja de su cuenta. Para conciliar la supresión de datos con las obligaciones legales de retención comercial y tributaria (**Código Tributario Boliviano - Ley N° 2492**, plazo de prescripción de 8 años):
+   - Se aplican mecanismos de **Anonimización / Pseudonimización** en los registros de pedidos históricos (`id_usuario` desvinculado de datos nominativos).
+   - Se ejecuta el borrado definitivo de carritos activos, tokens de sesión y direcciones temporales no vinculadas a transacciones perfeccionadas.
+4. **Derecho de Oposición y Consentimiento Informado:** Se recaba el consentimiento explícito del usuario previo a la recolección de datos, prohibiendo la cesión o comercialización de información personal a terceros sin autorización previa.
+
+### 7.2. Cumplimiento de la Ley N° 164 (Telecomunicaciones y TIC) y Decretos Reglamentarios
+En el marco de la **Ley General N° 164**, el **D.S. 1793** y el **D.S. 3525**:
+
+1. **Validez Jurídica y Probatoria de Contratos Digitales (Art. 79):**
+   - El proceso de checkout y la confirmación del pedido (`PED-XXXXXX`) constituyen contratos de compraventa electrónicos válidos y vinculantes.
+   - Cada transacción genera un comprobante electrónico con sello de tiempo (*timestamping*) y resumen criptográfico (Hash SHA-256) que garantiza la integridad inalterable del documento digital.
+2. **Adopción de Estándares Abiertos y Software Libre (Art. 77):**
+   - El sistema prioriza el uso de formatos abiertos y estándares web universales (JSON, REST, HTTP/2, UTF-8, SVG, SQL ANSI) para evitar el secuestro tecnológico (*vendor lock-in*) y garantizar la interoperabilidad con servicios del Estado (ej. pasarelas de pago del Banco Central de Bolivia y facturación electrónica del SIN).
+3. **Firmas Digitales y No Repudio:**
+   - La arquitectura prevé la integración con Entidades Certificadoras Autorizadas en Bolivia (**ADSIB** - Agencia para el Desarrollo de la Sociedad de la Información en Bolivia) para la emisión y validación de certificados y firmas digitales en facturas y órdenes de compra de alto valor.
+
+### 7.3. Seguridad de la Información, Protocolos Criptográficos y Trazas de Auditoría (Directrices ASFI / ISO 27001)
+Tomando como referencia las mejores prácticas de la **Autoridad de Supervisión del Sistema Financiero (ASFI - Circular 508/2017 y R.N. 136/2018)** y estándares internacionales (**ISO/IEC 27001 / OWASP Top 10**):
+
+1. **Cifrado en Tránsito (Data in Transit):**
+   - Todas las comunicaciones cliente-servidor se canalizan exclusivamente mediante el protocolo **TLS 1.3 / HTTPS** con suite de cifrado robusto (AES-GCM / ChaCha20-Poly1305) y directivas HSTS (*HTTP Strict Transport Security*) para mitigar ataques *Man-In-The-Middle* (MitM).
+2. **Cifrado y Protección en Reposo (Data at Rest):**
+   - Almacenamiento seguro de credenciales mediante algoritmos de derivación de claves con factor de coste adaptativo (**Argon2id** o **bcrypt** con salting dinámico).
+   - Cifrado a nivel de base de datos (`pgcrypto` / AES-256) para campos sensibles de contacto (teléfonos, direcciones físicas exactas y números de identificación personal).
+3. **Logs de Auditoría y Trazabilidad Inmutable:**
+   - Registro automatizado de eventos de seguridad en una tabla dedicada de auditoría (`audit_log`): identificación del actor (`id_usuario`), dirección IP de origen, User-Agent, fecha/hora precisa en UTC, tipo de evento (`AUTH_LOGIN`, `ORDER_CREATED`, `STOCK_UPDATED`, `PRODUCT_DEACTIVATED`, `UNAUTHORIZED_ACCESS_ATTEMPT`) y estado de la operación.
+   - Protección contra manipulación de logs (*tamper-proof logging*) para servir como evidencia forense válida en procesos legales y peritajes informáticos.
+4. **Control de Acceso y Principio de Menor Privilegio (RBAC):**
+   - Segregación estricta de funciones entre `CLIENTE` y `ADMINISTRADOR` mediante tokens de acceso firmados criptográficamente (JWT con expiración corta y rotación de Refresh Tokens), previniendo vulnerabilidades de escalamiento de privilegios y accesos indebidos (**Art. 363 ter Código Penal Boliviano**).
