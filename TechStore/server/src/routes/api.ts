@@ -47,4 +47,25 @@ router.patch('/pedidos/:id/estado', pedidoController.actualizarEstado);
 router.get('/usuarios', usuarioController.listar);
 router.get('/usuarios/:id', usuarioController.obtenerPorId);
 
+// Auditoría ASFI / Seguridad
+import { AuditService } from '../services/AuditService.js';
+router.get('/audit/logs', (req, res) => {
+  try {
+    const logs = AuditService.listar(100);
+    res.json(logs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/audit/verificar/:idLog', (req, res) => {
+  try {
+    const id = Number(req.params.idLog);
+    const esValido = AuditService.verificarIntegridad(id);
+    res.json({ id_log: id, inalterado: esValido });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

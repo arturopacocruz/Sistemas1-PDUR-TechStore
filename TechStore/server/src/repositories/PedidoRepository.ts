@@ -1,6 +1,7 @@
 import { db } from '../database/db.js';
 import { Pedido, DetallePedido, DireccionEntrega, EstadoPedido } from '../models/types.js';
 import { IPedidoRepository } from '../interfaces/IPedidoRepository.js';
+import { CryptoUtil } from '../utils/crypto.js';
 
 export class PedidoRepository implements IPedidoRepository {
   generarNumeroPedido(): string {
@@ -11,16 +12,21 @@ export class PedidoRepository implements IPedidoRepository {
   }
 
   guardarDireccion(idUsuario: number, nombreReceptor: string, direccion: string, ciudad: string, telefono: string): DireccionEntrega {
+    // Cifrado en reposo para datos personales sensibles PII (Ley N° 164 / ASFI)
+    const encryptedDireccion = CryptoUtil.encrypt(direccion);
+    const encryptedTelefono = CryptoUtil.encrypt(telefono);
+
     const stmt = db.prepare(`
       INSERT INTO direccion_entrega (id_usuario, nombre_receptor, direccion, ciudad, telefono)
       VALUES (?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(idUsuario, nombreReceptor, direccion, ciudad, telefono);
+    const info = stmt.run(idUsuario, nombreReceptor, encryptedDireccion, ciudad, encryptedTelefono);
+
     return {
       id_direccion: Number(info.lastInsertRowid),
       id_usuario: idUsuario,
       nombre_receptor: nombreReceptor,
-      direccion,
+      direccion, // Retornar en memoria descifrado para el flujo activo
       ciudad,
       telefono
     };
@@ -28,25 +34,48 @@ export class PedidoRepository implements IPedidoRepository {
 
   obtenerDireccionPorId(idDireccion: number): DireccionEntrega | undefined {
     const stmt = db.prepare('SELECT * FROM direccion_entrega WHERE id_direccion = ?');
-    return stmt.get(idDireccion) as DireccionEntrega | undefined;
+    const raw = stmt.get(idDireccion) as DireccionEntrega | undefined;
+    if (!raw) return undefined;
+
+    return {
+      ...raw,
+      direccion: CryptoUtil.decrypt(raw.direccion),
+      telefono: CryptoUtil.decrypt(raw.telefono)
+    };
   }
 
   obtenerDireccionesPorUsuario(idUsuario: number): DireccionEntrega[] {
     const stmt = db.prepare('SELECT * FROM direccion_entrega WHERE id_usuario = ? ORDER BY id_direccion DESC');
-    return stmt.all(idUsuario) as DireccionEntrega[];
+    const rows = stmt.all(idUsuario) as DireccionEntrega[];
+    return rows.map(r => ({
+      ...r,
+      direccion: CryptoUtil.decrypt(r.direccion),
+      telefono: CryptoUtil.decrypt(r.telefono)
+    }));
   }
 
   guardar(idUsuario: number, idDireccion: number, numeroPedido: string, total: number, items: { id_producto: number; cantidad: number; precio_unitario: number; subtotal: number }[]): Pedido {
     const insertTransaction = db.transaction(() => {
-      // 1. Insert Pedido
+      // 1. Sello de Integridad Criptográfico (SHA-256 HMAC) para el contrato digital (Ley N° 164)
+      const timestamp = new Date().toISOString();
+      const hashIntegridad = CryptoUtil.generateIntegrityHash({
+        numero_pedido: numeroPedido,
+        id_usuario: idUsuario,
+        id_direccion: idDireccion,
+        total,
+        items,
+        timestamp
+      });
+
+      // 2. Insert Pedido con hash_integridad
       const insertPedidoStmt = db.prepare(`
-        INSERT INTO pedido (numero_pedido, id_usuario, id_direccion, estado, total)
-        VALUES (?, ?, ?, 'Confirmado', ?)
+        INSERT INTO pedido (numero_pedido, id_usuario, id_direccion, estado, total, hash_integridad)
+        VALUES (?, ?, ?, 'Confirmado', ?, ?)
       `);
-      const info = insertPedidoStmt.run(numeroPedido, idUsuario, idDireccion, total);
+      const info = insertPedidoStmt.run(numeroPedido, idUsuario, idDireccion, total, hashIntegridad);
       const idPedido = Number(info.lastInsertRowid);
 
-      // 2. Insert DetallePedido and update stock
+      // 3. Insert DetallePedido and update stock
       const insertDetalleStmt = db.prepare(`
         INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad, precio_unitario, subtotal)
         VALUES (?, ?, ?, ?, ?)

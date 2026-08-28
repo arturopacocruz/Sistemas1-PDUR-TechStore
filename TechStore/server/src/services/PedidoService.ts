@@ -5,6 +5,8 @@ import { IPedidoRepository } from '../interfaces/IPedidoRepository.js';
 import { ICarritoRepository } from '../interfaces/ICarritoRepository.js';
 import { IProductoRepository } from '../interfaces/IProductoRepository.js';
 import { PedidoValidator } from '../validators/PedidoValidator.js';
+import { AuditService } from './AuditService.js';
+import { CryptoUtil } from '../utils/crypto.js';
 import { Pedido, DireccionEntrega, EstadoPedido } from '../models/types.js';
 
 export class PedidoService {
@@ -38,9 +40,17 @@ export class PedidoService {
     return { ok: true };
   }
 
-  confirmarPedido(idUsuario: number, datosEntrega: Omit<DireccionEntrega, 'id_direccion' | 'id_usuario'>): Pedido {
+  confirmarPedido(idUsuario: number, datosEntrega: Omit<DireccionEntrega, 'id_direccion' | 'id_usuario'>, ipOrigen = '127.0.0.1', userAgent = 'TechStore-Client'): Pedido {
     const validacion = PedidoValidator.validarDireccionEntrega(datosEntrega);
     if (!validacion.valido) {
+      AuditService.registrar({
+        id_usuario: idUsuario,
+        ip_origen: ipOrigen,
+        user_agent: userAgent,
+        accion: 'ORDER_VALIDATION_FAILED',
+        entidad_afectada: 'PEDIDO',
+        detalles: { error: validacion.errores[0] }
+      });
       throw new Error(validacion.errores[0]);
     }
 
@@ -51,6 +61,14 @@ export class PedidoService {
 
     const stockCheck = this.verificarStockCarrito(carrito.items);
     if (!stockCheck.ok) {
+      AuditService.registrar({
+        id_usuario: idUsuario,
+        ip_origen: ipOrigen,
+        user_agent: userAgent,
+        accion: 'ORDER_STOCK_REJECTED',
+        entidad_afectada: 'PRODUCTO',
+        detalles: { producto: stockCheck.producto, motivo: 'Stock insuficiente al checkout' }
+      });
       throw new Error(`Producto sin stock: "${stockCheck.producto}"`);
     }
 
@@ -85,6 +103,23 @@ export class PedidoService {
 
     this.carritoRepository.actualizarEstado(carrito.id_carrito, 'Confirmado');
 
+    // Registro Inmutable en Logs de Auditoría (Normativa ASFI)
+    AuditService.registrar({
+      id_usuario: idUsuario,
+      ip_origen: ipOrigen,
+      user_agent: userAgent,
+      accion: 'ORDER_CREATED',
+      entidad_afectada: 'PEDIDO',
+      id_entidad: nuevoPedido.numero_pedido,
+      detalles: {
+        numero_pedido: nuevoPedido.numero_pedido,
+        total: nuevoPedido.total,
+        articulos_count: itemsParaGuardar.length,
+        hash_integridad: nuevoPedido.hash_integridad,
+        receptor_mask: CryptoUtil.maskPhone(datosEntrega.telefono)
+      }
+    });
+
     return nuevoPedido;
   }
 
@@ -104,10 +139,26 @@ export class PedidoService {
     return this.pedidoRepository.listarPorUsuario(idUsuario);
   }
 
-  actualizarEstadoPedido(idPedido: number, estado: string): boolean {
+  actualizarEstadoPedido(idPedido: number, estado: string, idAdmin = 3, ipOrigen = '127.0.0.1'): boolean {
     if (!PedidoValidator.validarEstado(estado)) {
       throw new Error(`Estado inválido: "${estado}". Valores permitidos: ${PedidoValidator.getEstadosPermitidos().join(', ')}.`);
     }
-    return this.pedidoRepository.actualizarEstado(idPedido, estado as EstadoPedido);
+    const pedido = this.pedidoRepository.buscarPorId(idPedido);
+    const ok = this.pedidoRepository.actualizarEstado(idPedido, estado as EstadoPedido);
+
+    if (ok) {
+      AuditService.registrar({
+        id_usuario: idAdmin,
+        ip_origen: ipOrigen,
+        accion: 'ORDER_STATUS_CHANGED',
+        entidad_afectada: 'PEDIDO',
+        id_entidad: pedido ? pedido.numero_pedido : String(idPedido),
+        detalles: {
+          estado_anterior: pedido?.estado,
+          nuevo_estado: estado
+        }
+      });
+    }
+    return ok;
   }
 }

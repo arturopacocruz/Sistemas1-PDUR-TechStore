@@ -5,6 +5,7 @@ export interface Usuario {
   nombre: string;
   email: string;
   telefono?: string | null;
+  password_hash?: string;
   rol: RolUsuario;
   fecha_registro: string;
 }
@@ -74,6 +75,7 @@ export interface Pedido {
   fecha: string;
   estado: EstadoPedido;
   total: number;
+  hash_integridad?: string; // Sello criptográfico SHA-256 HMAC (Ley N° 164)
   cliente_nombre?: string;
   cliente_email?: string;
   direccion?: DireccionEntrega;
@@ -88,4 +90,19 @@ export interface DetallePedido {
   precio_unitario: number;
   subtotal: number;
   producto_nombre?: string;
+}
+
+// Modelo de Auditoría Inmutable (Normativa ASFI Circular 508 / ISO 27001)
+export interface LogAuditoria {
+  id_log: number;
+  id_usuario?: number | null;
+  ip_origen: string;
+  user_agent?: string | null;
+  accion: string;
+  entidad_afectada: string;
+  id_entidad?: string | null;
+  detalles?: any;
+  hash_integridad: string;
+  fecha_utc: string;
+  usuario_nombre?: string;
 }

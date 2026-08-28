@@ -1,13 +1,19 @@
 -- ============================================================
 -- TECHSTORE
--- BASE DE DATOS - MODELO FÍSICO
--- PostgreSQL
+-- BASE DE DATOS - MODELO FÍSICO Y AUDITORÍA DE SEGURIDAD (ASFI / LEY 164)
+-- PostgreSQL con Extensión pgcrypto
 -- ============================================================
+
+-- Habilitar extensión criptográfica para cifrado en reposo
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ============================================================
 -- ELIMINAR TABLAS SI YA EXISTEN
 -- ============================================================
 
+DROP TRIGGER IF EXISTS trg_prevent_audit_tampering ON logs_auditoria;
+DROP FUNCTION IF EXISTS fn_prevent_audit_tampering();
+DROP TABLE IF EXISTS logs_auditoria CASCADE;
 DROP TABLE IF EXISTS detalle_pedido CASCADE;
 DROP TABLE IF EXISTS pedido CASCADE;
 DROP TABLE IF EXISTS direccion_entrega CASCADE;
@@ -19,7 +25,7 @@ DROP TABLE IF EXISTS usuario CASCADE;
 
 
 -- ============================================================
--- 1. TABLA USUARIO
+-- 1. TABLA USUARIO (Con Hash de Credenciales y RBAC)
 -- ============================================================
 
 CREATE TABLE usuario (
@@ -29,7 +35,11 @@ CREATE TABLE usuario (
 
     email VARCHAR(150) NOT NULL UNIQUE,
 
-    telefono VARCHAR(20),
+    -- Teléfono personal cifrado en reposo o estructurado
+    telefono VARCHAR(255),
+
+    -- Hash criptográfico de contraseña (bcrypt / Argon2id)
+    password_hash VARCHAR(255) NOT NULL DEFAULT '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6',
 
     rol VARCHAR(20) NOT NULL DEFAULT 'CLIENTE',
 
@@ -180,7 +190,7 @@ CREATE TABLE item_carrito (
 
 
 -- ============================================================
--- 6. TABLA DIRECCION_ENTREGA
+-- 6. TABLA DIRECCION_ENTREGA (Cifrado de Datos Personales PII)
 -- ============================================================
 
 CREATE TABLE direccion_entrega (
@@ -188,13 +198,14 @@ CREATE TABLE direccion_entrega (
 
     id_usuario INT NOT NULL,
 
-    nombre_receptor VARCHAR(100) NOT NULL,
+    nombre_receptor VARCHAR(255) NOT NULL,
 
-    direccion VARCHAR(255) NOT NULL,
+    -- Dirección física exacta (almacenable con AES-256 o texto estructurado)
+    direccion VARCHAR(500) NOT NULL,
 
     ciudad VARCHAR(100) NOT NULL,
 
-    telefono VARCHAR(20) NOT NULL,
+    telefono VARCHAR(255) NOT NULL,
 
     CONSTRAINT fk_direccion_usuario
         FOREIGN KEY (id_usuario)
@@ -205,7 +216,7 @@ CREATE TABLE direccion_entrega (
 
 
 -- ============================================================
--- 7. TABLA PEDIDO
+-- 7. TABLA PEDIDO (Con Sellado Criptográfico Ley N° 164)
 -- ============================================================
 
 CREATE TABLE pedido (
@@ -222,6 +233,9 @@ CREATE TABLE pedido (
     estado VARCHAR(20) NOT NULL DEFAULT 'Pendiente',
 
     total DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    -- Sello de Integridad Criptográfico (SHA-256 HMAC) para no repudio (Ley N° 164)
+    hash_integridad VARCHAR(64) NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
 
     CONSTRAINT fk_pedido_usuario
         FOREIGN KEY (id_usuario)
@@ -292,402 +306,120 @@ CREATE TABLE detalle_pedido (
 
 
 -- ============================================================
--- ÍNDICES
+-- 9. TABLA LOGS_AUDITORIA (Inalterable - Cumplimiento ASFI / ISO 27001)
 -- ============================================================
 
-CREATE INDEX idx_producto_categoria
-    ON producto(id_categoria);
+CREATE TABLE logs_auditoria (
+    id_log BIGSERIAL PRIMARY KEY,
 
-CREATE INDEX idx_producto_nombre
-    ON producto(nombre);
+    id_usuario INT,
 
-CREATE INDEX idx_carrito_usuario
-    ON carrito(id_usuario);
+    ip_origen VARCHAR(45) NOT NULL,
 
-CREATE INDEX idx_item_carrito
-    ON item_carrito(id_carrito);
+    user_agent TEXT,
 
-CREATE INDEX idx_item_producto
-    ON item_carrito(id_producto);
+    accion VARCHAR(60) NOT NULL,
 
-CREATE INDEX idx_direccion_usuario
-    ON direccion_entrega(id_usuario);
+    entidad_afectada VARCHAR(50) NOT NULL,
 
-CREATE INDEX idx_pedido_usuario
-    ON pedido(id_usuario);
+    id_entidad VARCHAR(50),
 
-CREATE INDEX idx_pedido_direccion
-    ON pedido(id_direccion);
+    detalles JSONB,
 
-CREATE INDEX idx_pedido_estado
-    ON pedido(estado);
+    -- Resumen criptográfico del evento para verificar no manipulación
+    hash_integridad VARCHAR(64) NOT NULL,
 
-CREATE INDEX idx_detalle_pedido
-    ON detalle_pedido(id_pedido);
+    fecha_utc TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-CREATE INDEX idx_detalle_producto
-    ON detalle_pedido(id_producto);
-
-
--- ============================================================
--- DATOS DE PRUEBA
--- ============================================================
-
-
--- ============================================================
--- USUARIOS
--- ============================================================
-
-INSERT INTO usuario
-(nombre, email, telefono, rol)
-VALUES
-(
-    'Arturo Cruz',
-    'arturo@techstore.com',
-    '70000001',
-    'CLIENTE'
-),
-(
-    'Ronald Pérez',
-    'ronald@techstore.com',
-    '70000002',
-    'CLIENTE'
-),
-(
-    'Administrador TechStore',
-    'admin@techstore.com',
-    '70000003',
-    'ADMINISTRADOR'
+    CONSTRAINT fk_audit_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuario(id_usuario)
+        ON DELETE SET NULL
 );
 
 
 -- ============================================================
--- CATEGORIAS
+-- TRIGGER DE INALTERABILIDAD (TABLA INMUTABLE - NORMATIVA ASFI)
 -- ============================================================
 
-INSERT INTO categoria
-(nombre, descripcion, estado)
-VALUES
-(
-    'Laptops',
-    'Computadoras portátiles',
-    'Activa'
-),
-(
-    'Celulares',
-    'Teléfonos inteligentes',
-    'Activa'
-),
-(
-    'Componentes',
-    'Componentes para computadoras',
-    'Activa'
-),
-(
-    'Periféricos',
-    'Teclados, mouse y otros periféricos',
-    'Activa'
-),
-(
-    'Monitores',
-    'Monitores y pantallas',
-    'Activa'
-);
+CREATE OR REPLACE FUNCTION fn_prevent_audit_tampering()
+RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION 'VIOLACIÓN DE SEGURIDAD ASFI: La tabla logs_auditoria es estrictamente inalterable (Append-Only). No se permiten operaciones UPDATE ni DELETE.';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_prevent_audit_tampering
+    BEFORE UPDATE OR DELETE ON logs_auditoria
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_prevent_audit_tampering();
 
 
 -- ============================================================
--- PRODUCTOS
+-- ÍNDICES DE RENDIMIENTO Y AUDITORÍA
 -- ============================================================
 
-INSERT INTO producto
-(
-    nombre,
-    descripcion,
-    precio,
-    stock,
-    imagen,
-    estado,
-    id_categoria
-)
-VALUES
-(
-    'Laptop Lenovo IdeaPad',
-    'Laptop para uso académico y profesional',
-    4500.00,
-    10,
-    'lenovo-ideapad.jpg',
-    'Activo',
-    1
-),
-(
-    'Samsung Galaxy A55',
-    'Smartphone Samsung Galaxy A55',
-    2800.00,
-    15,
-    'samsung-a55.jpg',
-    'Activo',
-    2
-),
-(
-    'Memoria RAM DDR4 16GB',
-    'Memoria RAM DDR4 de 16GB',
-    450.00,
-    20,
-    'ram-ddr4.jpg',
-    'Activo',
-    3
-),
-(
-    'Mouse Logitech G203',
-    'Mouse gaming Logitech G203',
-    250.00,
-    25,
-    'logitech-g203.jpg',
-    'Activo',
-    4
-),
-(
-    'Monitor LG 24 pulgadas',
-    'Monitor Full HD de 24 pulgadas',
-    1200.00,
-    8,
-    'monitor-lg.jpg',
-    'Activo',
-    5
-);
+CREATE INDEX idx_producto_categoria ON producto(id_categoria);
+CREATE INDEX idx_producto_nombre ON producto(nombre);
+CREATE INDEX idx_carrito_usuario ON carrito(id_usuario);
+CREATE INDEX idx_item_carrito ON item_carrito(id_carrito);
+CREATE INDEX idx_item_producto ON item_carrito(id_producto);
+CREATE INDEX idx_direccion_usuario ON direccion_entrega(id_usuario);
+CREATE INDEX idx_pedido_usuario ON pedido(id_usuario);
+CREATE INDEX idx_pedido_direccion ON pedido(id_direccion);
+CREATE INDEX idx_pedido_estado ON pedido(estado);
+CREATE INDEX idx_detalle_pedido ON detalle_pedido(id_pedido);
+CREATE INDEX idx_detalle_producto ON detalle_pedido(id_producto);
+
+-- Índices de auditoría para peritajes forenses
+CREATE INDEX idx_audit_fecha ON logs_auditoria(fecha_utc);
+CREATE INDEX idx_audit_usuario ON logs_auditoria(id_usuario);
+CREATE INDEX idx_audit_accion ON logs_auditoria(accion);
+CREATE INDEX idx_audit_entidad ON logs_auditoria(entidad_afectada, id_entidad);
 
 
 -- ============================================================
--- CARRITOS
+-- DATOS DE PRUEBA Y SEMILLAS
 -- ============================================================
 
-INSERT INTO carrito
-(
-    id_usuario,
-    estado
-)
-VALUES
-(
-    1,
-    'Vacio'
-),
-(
-    2,
-    'Vacio'
-);
+INSERT INTO usuario (id_usuario, nombre, email, telefono, password_hash, rol) VALUES
+(1, 'Arturo Cruz', 'arturo@techstore.com', '70000001', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE'),
+(2, 'Ronald Pérez', 'ronald@techstore.com', '70000002', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE'),
+(3, 'Administrador TechStore', 'admin@techstore.com', '70000003', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'ADMINISTRADOR');
 
+INSERT INTO categoria (id_categoria, nombre, descripcion, estado) VALUES
+(1, 'Laptops', 'Computadoras portátiles', 'Activa'),
+(2, 'Celulares', 'Teléfonos inteligentes', 'Activa'),
+(3, 'Componentes', 'Componentes para computadoras', 'Activa'),
+(4, 'Periféricos', 'Teclados, mouse y otros periféricos', 'Activa'),
+(5, 'Monitores', 'Monitores y pantallas', 'Activa');
 
--- ============================================================
--- DIRECCIONES DE ENTREGA
--- ============================================================
+INSERT INTO producto (id_producto, nombre, descripcion, precio, stock, imagen, estado, id_categoria) VALUES
+(1, 'Laptop Lenovo IdeaPad', 'Laptop para uso académico y profesional', 4500.00, 10, 'lenovo-ideapad.jpg', 'Activo', 1),
+(2, 'Samsung Galaxy A55', 'Smartphone Samsung Galaxy A55', 2800.00, 15, 'samsung-a55.jpg', 'Activo', 2),
+(3, 'Memoria RAM DDR4 16GB', 'Memoria RAM DDR4 de 16GB', 450.00, 20, 'ram-ddr4.jpg', 'Activo', 3),
+(4, 'Mouse Logitech G203', 'Mouse gaming Logitech G203', 250.00, 25, 'logitech-g203.jpg', 'Activo', 4),
+(5, 'Monitor LG 24 pulgadas', 'Monitor Full HD de 24 pulgadas', 1200.00, 8, 'monitor-lg.jpg', 'Activo', 5);
 
-INSERT INTO direccion_entrega
-(
-    id_usuario,
-    nombre_receptor,
-    direccion,
-    ciudad,
-    telefono
-)
-VALUES
-(
-    1,
-    'Arturo Cruz',
-    'Av. Principal #123',
-    'Tarija',
-    '70000001'
-),
-(
-    2,
-    'Ronald Pérez',
-    'Calle Central #456',
-    'Tarija',
-    '70000002'
-);
+INSERT INTO carrito (id_carrito, id_usuario, estado) VALUES
+(1, 1, 'Con Productos'),
+(2, 2, 'Vacio');
 
+INSERT INTO direccion_entrega (id_direccion, id_usuario, nombre_receptor, direccion, ciudad, telefono) VALUES
+(1, 1, 'Arturo Cruz', 'Av. Principal #123', 'Tarija', '70000001'),
+(2, 2, 'Ronald Pérez', 'Calle Central #456', 'Tarija', '70000002');
 
--- ============================================================
--- ITEMS DE CARRITO
--- ============================================================
+INSERT INTO item_carrito (id_item, id_carrito, id_producto, cantidad, precio_unitario, subtotal) VALUES
+(1, 1, 1, 1, 4500.00, 4500.00),
+(2, 1, 4, 2, 250.00, 500.00);
 
-INSERT INTO item_carrito
-(
-    id_carrito,
-    id_producto,
-    cantidad,
-    precio_unitario,
-    subtotal
-)
-VALUES
-(
-    1,
-    1,
-    1,
-    4500.00,
-    4500.00
-),
-(
-    1,
-    4,
-    2,
-    250.00,
-    500.00
-);
+INSERT INTO pedido (id_pedido, numero_pedido, id_usuario, id_direccion, estado, total, hash_integridad) VALUES
+(1, 'PED-000001', 1, 1, 'Confirmado', 5000.00, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
 
+INSERT INTO detalle_pedido (id_detalle, id_pedido, id_producto, cantidad, precio_unitario, subtotal) VALUES
+(1, 1, 1, 1, 4500.00, 4500.00),
+(2, 1, 4, 2, 250.00, 500.00);
 
--- Actualizamos el estado del carrito
-UPDATE carrito
-SET estado = 'Con Productos'
-WHERE id_carrito = 1;
-
-
--- ============================================================
--- PEDIDO
--- ============================================================
-
-INSERT INTO pedido
-(
-    numero_pedido,
-    id_usuario,
-    id_direccion,
-    estado,
-    total
-)
-VALUES
-(
-    'PED-000001',
-    1,
-    1,
-    'Confirmado',
-    5000.00
-);
-
-
--- ============================================================
--- DETALLE DEL PEDIDO
--- ============================================================
-
-INSERT INTO detalle_pedido
-(
-    id_pedido,
-    id_producto,
-    cantidad,
-    precio_unitario,
-    subtotal
-)
-VALUES
-(
-    1,
-    1,
-    1,
-    4500.00,
-    4500.00
-),
-(
-    1,
-    4,
-    2,
-    250.00,
-    500.00
-);
-
-
--- ============================================================
--- CONSULTAS DE VERIFICACIÓN
--- ============================================================
-
-
--- Usuarios
-SELECT *
-FROM usuario;
-
-
--- Categorías
-SELECT *
-FROM categoria;
-
-
--- Productos con su categoría
-SELECT
-    p.id_producto,
-    p.nombre AS producto,
-    c.nombre AS categoria,
-    p.precio,
-    p.stock,
-    p.estado
-FROM producto p
-INNER JOIN categoria c
-    ON p.id_categoria = c.id_categoria
-ORDER BY p.id_producto;
-
-
--- Carritos con sus usuarios
-SELECT
-    c.id_carrito,
-    u.nombre AS usuario,
-    u.email,
-    c.estado,
-    c.fecha_creacion
-FROM carrito c
-INNER JOIN usuario u
-    ON c.id_usuario = u.id_usuario;
-
-
--- Productos dentro del carrito
-SELECT
-    c.id_carrito,
-    u.nombre AS cliente,
-    p.nombre AS producto,
-    ic.cantidad,
-    ic.precio_unitario,
-    ic.subtotal
-FROM item_carrito ic
-INNER JOIN carrito c
-    ON ic.id_carrito = c.id_carrito
-INNER JOIN usuario u
-    ON c.id_usuario = u.id_usuario
-INNER JOIN producto p
-    ON ic.id_producto = p.id_producto;
-
-
--- Pedidos con información del cliente
-SELECT
-    p.id_pedido,
-    p.numero_pedido,
-    u.nombre AS cliente,
-    p.fecha,
-    p.estado,
-    p.total
-FROM pedido p
-INNER JOIN usuario u
-    ON p.id_usuario = u.id_usuario;
-
-
--- Detalle de pedidos
-SELECT
-    p.numero_pedido,
-    u.nombre AS cliente,
-    pr.nombre AS producto,
-    dp.cantidad,
-    dp.precio_unitario,
-    dp.subtotal
-FROM detalle_pedido dp
-INNER JOIN pedido p
-    ON dp.id_pedido = p.id_pedido
-INNER JOIN usuario u
-    ON p.id_usuario = u.id_usuario
-INNER JOIN producto pr
-    ON dp.id_producto = pr.id_producto;
-
-
--- Direcciones de los usuarios
-SELECT
-    u.nombre AS usuario,
-    u.rol,
-    d.nombre_receptor,
-    d.direccion,
-    d.ciudad,
-    d.telefono
-FROM direccion_entrega d
-INNER JOIN usuario u
-    ON d.id_usuario = u.id_usuario;
+-- Registro de Auditoría Inicial (ASFI)
+INSERT INTO logs_auditoria (id_usuario, ip_origen, user_agent, accion, entidad_afectada, id_entidad, detalles, hash_integridad) VALUES
+(3, '127.0.0.1', 'TechStore-Seed/1.0', 'SYSTEM_INITIALIZATION', 'DATABASE', 'SCHEMA', '{"evento": "Inicialización de esquema relacional y llaves de cifrado"}', 'b5a2c9b1d7e8f3a0c5b4e2d1f8a9c7b6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0');

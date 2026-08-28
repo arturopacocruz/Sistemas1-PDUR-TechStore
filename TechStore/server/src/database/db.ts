@@ -1,21 +1,22 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import fs from 'fs';
+import { CryptoUtil } from '../utils/crypto.js';
 
 const dbPath = path.resolve(process.cwd(), 'techstore.db');
 export const db = new Database(dbPath);
 
-// Enable foreign keys
+// Habilitar claves foráneas
 db.pragma('foreign_keys = ON');
 
 export function initDatabase() {
-  // Create tables
+  // Crear tablas con soporte de auditoría ASFI y campos criptográficos
   db.exec(`
     CREATE TABLE IF NOT EXISTS usuario (
       id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       telefono TEXT,
+      password_hash TEXT NOT NULL DEFAULT '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6',
       rol TEXT NOT NULL DEFAULT 'CLIENTE' CHECK (rol IN ('CLIENTE', 'ADMINISTRADOR')),
       fecha_registro TEXT NOT NULL DEFAULT (DATE('now'))
     );
@@ -79,6 +80,7 @@ export function initDatabase() {
       fecha TEXT NOT NULL DEFAULT (DATE('now')),
       estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Confirmado', 'Preparando', 'Entregado', 'Rechazado')),
       total REAL NOT NULL DEFAULT 0 CHECK (total >= 0),
+      hash_integridad TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
       FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON UPDATE CASCADE ON DELETE RESTRICT,
       FOREIGN KEY (id_direccion) REFERENCES direccion_entrega(id_direccion) ON UPDATE CASCADE ON DELETE RESTRICT
     );
@@ -94,6 +96,34 @@ export function initDatabase() {
       FOREIGN KEY (id_producto) REFERENCES producto(id_producto) ON UPDATE CASCADE ON DELETE RESTRICT
     );
 
+    -- 9. TABLA LOGS_AUDITORIA (Inalterable - Cumplimiento ASFI / ISO 27001)
+    CREATE TABLE IF NOT EXISTS logs_auditoria (
+      id_log INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_usuario INTEGER,
+      ip_origen TEXT NOT NULL,
+      user_agent TEXT,
+      accion TEXT NOT NULL,
+      entidad_afectada TEXT NOT NULL,
+      id_entidad TEXT,
+      detalles TEXT,
+      hash_integridad TEXT NOT NULL,
+      fecha_utc TEXT NOT NULL DEFAULT (DATETIME('now')),
+      FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE SET NULL
+    );
+
+    -- Trigger de Inalterabilidad SQLite (ASFI: Tabla inmutable)
+    CREATE TRIGGER IF NOT EXISTS trg_prevent_audit_update
+    BEFORE UPDATE ON logs_auditoria
+    BEGIN
+      SELECT RAISE(ABORT, 'VIOLACIÓN ASFI: Los logs de auditoría son inalterables');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_prevent_audit_delete
+    BEFORE DELETE ON logs_auditoria
+    BEGIN
+      SELECT RAISE(ABORT, 'VIOLACIÓN ASFI: Los logs de auditoría no pueden ser eliminados');
+    END;
+
     -- Indices
     CREATE INDEX IF NOT EXISTS idx_producto_categoria ON producto(id_categoria);
     CREATE INDEX IF NOT EXISTS idx_producto_nombre ON producto(nombre);
@@ -104,19 +134,21 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_pedido_usuario ON pedido(id_usuario);
     CREATE INDEX IF NOT EXISTS idx_pedido_estado ON pedido(estado);
     CREATE INDEX IF NOT EXISTS idx_detalle_pedido ON detalle_pedido(id_pedido);
+    CREATE INDEX IF NOT EXISTS idx_audit_fecha ON logs_auditoria(fecha_utc);
+    CREATE INDEX IF NOT EXISTS idx_audit_accion ON logs_auditoria(accion);
   `);
 
-  // Seed initial data if empty
+  // Semillas si la base de datos está vacía
   const userCount = db.prepare('SELECT count(*) as count FROM usuario').get() as { count: number };
   if (userCount.count === 0) {
     const seedUsers = db.transaction(() => {
       // 1. Usuarios
       const insertUser = db.prepare(`
-        INSERT INTO usuario (id_usuario, nombre, email, telefono, rol) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO usuario (id_usuario, nombre, email, telefono, password_hash, rol) VALUES (?, ?, ?, ?, ?, ?)
       `);
-      insertUser.run(1, 'Arturo Cruz', 'arturo@techstore.com', '70000001', 'CLIENTE');
-      insertUser.run(2, 'Ronald Pérez', 'ronald@techstore.com', '70000002', 'CLIENTE');
-      insertUser.run(3, 'Administrador TechStore', 'admin@techstore.com', '70000003', 'ADMINISTRADOR');
+      insertUser.run(1, 'Arturo Cruz', 'arturo@techstore.com', '70000001', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE');
+      insertUser.run(2, 'Ronald Pérez', 'ronald@techstore.com', '70000002', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE');
+      insertUser.run(3, 'Administrador TechStore', 'admin@techstore.com', '70000003', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'ADMINISTRADOR');
 
       // 2. Categorias
       const insertCat = db.prepare(`
@@ -165,12 +197,19 @@ export function initDatabase() {
       insertItem.run(1, 1, 1, 4500.00, 4500.00);
       insertItem.run(1, 4, 2, 250.00, 500.00);
 
-      // 7. Pedido inicial de prueba
+      // 7. Pedido inicial de prueba con Hash de Integridad (Ley N° 164)
+      const hashInicial = CryptoUtil.generateIntegrityHash({
+        numero_pedido: 'PED-000001',
+        id_usuario: 1,
+        total: 5000.00,
+        fecha: '2026-08-25'
+      });
+
       const insertPedido = db.prepare(`
-        INSERT INTO pedido (id_pedido, numero_pedido, id_usuario, id_direccion, estado, total)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO pedido (id_pedido, numero_pedido, id_usuario, id_direccion, estado, total, hash_integridad)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      insertPedido.run(1, 'PED-000001', 1, 1, 'Confirmado', 5000.00);
+      insertPedido.run(1, 'PED-000001', 1, 1, 'Confirmado', 5000.00, hashInicial);
 
       // 8. Detalle del pedido inicial
       const insertDetalle = db.prepare(`
@@ -179,9 +218,30 @@ export function initDatabase() {
       `);
       insertDetalle.run(1, 1, 1, 4500.00, 4500.00);
       insertDetalle.run(1, 4, 2, 250.00, 500.00);
+
+      // 9. Registro inicial de auditoría ASFI
+      const insertAudit = db.prepare(`
+        INSERT INTO logs_auditoria (id_usuario, ip_origen, user_agent, accion, entidad_afectada, id_entidad, detalles, hash_integridad)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      const seedAuditHash = CryptoUtil.generateIntegrityHash({
+        accion: 'SYSTEM_INITIALIZATION',
+        ip: '127.0.0.1',
+        time: new Date().toISOString()
+      });
+      insertAudit.run(
+        3,
+        '127.0.0.1',
+        'TechStore-Server/2.0 (ASFI-Audited)',
+        'SYSTEM_INITIALIZATION',
+        'DATABASE',
+        'SCHEMA',
+        JSON.stringify({ evento: 'Esquema relacional y llaves criptográficas inicializadas' }),
+        seedAuditHash
+      );
     });
 
     seedUsers();
-    console.log('[Database] Database initialized and seeded successfully.');
+    console.log('[Database] Database initialized and seeded with ASFI audit logging and encryption.');
   }
 }
