@@ -4,53 +4,71 @@ import { api } from '../services/api';
 
 interface AuthContextType {
   usuarioActual: Usuario | null;
-  usuariosDisponibles: Usuario[];
-  cambiarUsuario: (idUsuario: number) => void;
+  estaAutenticado: boolean;
   esAdmin: boolean;
   cargando: boolean;
+  isLoginModalOpen: boolean;
+  openLoginModal: () => void;
+  closeLoginModal: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  // Cargar usuario persistido en localStorage al inicializar
   useEffect(() => {
-    async function loadUsers() {
-      try {
-        const data = await api.getUsuarios();
-        setUsuarios(data);
-        if (data.length > 0) {
-          setUsuarioActual(data[0]); // Default to user 1 (Arturo Cruz - CLIENTE)
-        }
-      } catch (err) {
-        console.error('Error cargando usuarios', err);
-      } finally {
-        setCargando(false);
+    try {
+      const savedUser = localStorage.getItem('techstore_user');
+      if (savedUser) {
+        setUsuarioActual(JSON.parse(savedUser));
       }
+    } catch (e) {
+      console.error('Error al recuperar sesión previa', e);
+      localStorage.removeItem('techstore_user');
+      localStorage.removeItem('techstore_token');
+    } finally {
+      setCargando(false);
     }
-    loadUsers();
   }, []);
 
-  const cambiarUsuario = (idUsuario: number) => {
-    const user = usuarios.find(u => u.id_usuario === idUsuario);
-    if (user) {
-      setUsuarioActual(user);
-    }
+  const login = async (email: string, password: string) => {
+    const res = await api.login(email, password);
+    setUsuarioActual(res.usuario);
+    localStorage.setItem('techstore_user', JSON.stringify(res.usuario));
+    localStorage.setItem('techstore_token', res.token);
+    setIsLoginModalOpen(false);
   };
 
+  const logout = () => {
+    setUsuarioActual(null);
+    localStorage.removeItem('techstore_user');
+    localStorage.removeItem('techstore_token');
+  };
+
+  const estaAutenticado = usuarioActual !== null;
   const esAdmin = usuarioActual?.rol === 'ADMINISTRADOR';
+
+  const openLoginModal = () => setIsLoginModalOpen(true);
+  const closeLoginModal = () => setIsLoginModalOpen(false);
 
   return (
     <AuthContext.Provider
       value={{
         usuarioActual,
-        usuariosDisponibles: usuarios,
-        cambiarUsuario,
+        estaAutenticado,
         esAdmin,
-        cargando
+        cargando,
+        isLoginModalOpen,
+        openLoginModal,
+        closeLoginModal,
+        login,
+        logout
       }}
     >
       {children}

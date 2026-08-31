@@ -2,21 +2,29 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { DatabaseStatusBadge } from '../DatabaseStatusBadge';
-import { ShoppingCart, ShieldCheck, User, Store, Package, Laptop } from 'lucide-react';
+import { ShoppingCart, ShieldCheck, User, Store, Package, Laptop, LogIn, LogOut, FileText } from 'lucide-react';
 
 interface NavbarProps {
   currentTab: 'catalogo' | 'pedidos' | 'admin';
   setCurrentTab: (tab: 'catalogo' | 'pedidos' | 'admin') => void;
+  onOpenTerms: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => {
-  const { usuarioActual, usuariosDisponibles, cambiarUsuario, esAdmin } = useAuth();
+export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpenTerms }) => {
+  const { usuarioActual, estaAutenticado, esAdmin, openLoginModal, logout } = useAuth();
   const { carrito, openCart } = useCart();
 
   const totalItemsEnCarrito = carrito?.items?.reduce((sum, item) => sum + item.cantidad, 0) || 0;
 
+  const handleLogout = () => {
+    logout();
+    if (currentTab === 'admin' || currentTab === 'pedidos') {
+      setCurrentTab('catalogo');
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-[#0a0d14]/85 backdrop-blur-xl border-b border-white/10">
+    <header className="sticky top-0 z-50 bg-[#0a0d14]/90 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <div
@@ -53,7 +61,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           </button>
 
           <button
-            onClick={() => setCurrentTab('pedidos')}
+            onClick={() => {
+              if (!estaAutenticado) {
+                openLoginModal();
+              } else {
+                setCurrentTab('pedidos');
+              }
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
               currentTab === 'pedidos'
                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20'
@@ -74,40 +88,61 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
               }`}
             >
               <ShieldCheck size={16} />
-              <span>Panel Admin (HU-04)</span>
+              <span>Panel Admin</span>
             </button>
           )}
+
+          <button
+            onClick={onOpenTerms}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-slate-400 hover:text-cyan-300 hover:bg-white/5 transition-colors"
+            title="Ver Términos y Condiciones Legales"
+          >
+            <FileText size={14} />
+            <span>Términos</span>
+          </button>
         </nav>
 
-        {/* Right Section: Status, Role Switcher & Cart Trigger */}
+        {/* Right Section: Status, Auth State & Cart Trigger */}
         <div className="flex items-center gap-3">
           {/* Database Connection Badge */}
           <DatabaseStatusBadge />
 
-          {/* User selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 transition-colors">
-            <User size={15} className="text-cyan-400" />
-            <select
-              value={usuarioActual?.id_usuario || ''}
-              onChange={e => {
-                const newId = Number(e.target.value);
-                cambiarUsuario(newId);
-                const user = usuariosDisponibles.find(u => u.id_usuario === newId);
-                if (user?.rol === 'ADMINISTRADOR') {
-                  setCurrentTab('admin');
-                } else if (currentTab === 'admin') {
-                  setCurrentTab('catalogo');
-                }
-              }}
-              className="bg-transparent border-none text-white text-xs font-semibold focus:outline-none cursor-pointer pr-1"
+          {/* Authentication State */}
+          {estaAutenticado && usuarioActual ? (
+            <div className="flex items-center gap-2 p-1 pl-3 pr-1.5 rounded-full bg-slate-900/90 border border-white/10 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">
+                  <User size={13} />
+                </div>
+                <div className="hidden lg:block text-left">
+                  <div className="text-xs font-bold text-white leading-tight truncate max-w-[120px]">
+                    {usuarioActual.nombre}
+                  </div>
+                  <div className="text-[10px] text-cyan-400 font-semibold leading-tight uppercase">
+                    {usuarioActual.rol}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón Rojo: Cerrar sesión */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1 px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95 ml-1"
+                title="Cerrar sesión de la cuenta activa"
+              >
+                <LogOut size={13} />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={openLoginModal}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 hover:text-white text-xs font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
             >
-              {usuariosDisponibles.map(user => (
-                <option key={user.id_usuario} value={user.id_usuario} className="bg-slate-900 text-white">
-                  {user.nombre} ({user.rol})
-                </option>
-              ))}
-            </select>
-          </div>
+              <LogIn size={15} />
+              <span>Iniciar Sesión</span>
+            </button>
+          )}
 
           {/* Cart Trigger Button (HU-02) */}
           <button
@@ -127,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
       </div>
 
       {/* Mobile navigation bar */}
-      <div className="md:hidden flex items-center justify-around py-2 px-4 border-t border-white/5 bg-slate-950/80">
+      <div className="md:hidden flex items-center justify-around py-2 px-4 border-t border-white/5 bg-slate-950/90">
         <button
           onClick={() => setCurrentTab('catalogo')}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
@@ -138,7 +173,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           <span>Catálogo</span>
         </button>
         <button
-          onClick={() => setCurrentTab('pedidos')}
+          onClick={() => {
+            if (!estaAutenticado) {
+              openLoginModal();
+            } else {
+              setCurrentTab('pedidos');
+            }
+          }}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
             currentTab === 'pedidos' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400'
           }`}
@@ -157,6 +198,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             <span>Admin</span>
           </button>
         )}
+        <button
+          onClick={onOpenTerms}
+          className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-slate-400 hover:text-cyan-300"
+        >
+          <FileText size={14} />
+          <span>Términos</span>
+        </button>
       </div>
     </header>
   );

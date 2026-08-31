@@ -6,7 +6,7 @@ import type { Pedido, DireccionEntrega } from '../types';
 import {
   CheckCircle2, MapPin, ArrowLeft, AlertCircle,
   ShoppingBag, Phone, Home, User, RefreshCw, ClipboardList,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Lock
 } from 'lucide-react';
 
 interface PedidoViewProps {
@@ -234,9 +234,10 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
           )}
 
           {/* Cumplimiento Ley N° 164 */}
-          <p className="text-xs text-slate-500 bg-slate-900/60 rounded-lg px-3 py-2 mb-6">
-            🔒 Cumplimiento <strong className="text-slate-400">Ley N° 164</strong>: Este pedido constituye un comprobante de compraventa electrónico con validez legal en Bolivia.
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-900/60 rounded-lg px-3 py-2 mb-6">
+            <Lock size={13} className="text-cyan-400 shrink-0" />
+            <span>Cumplimiento <strong className="text-slate-300">Ley N° 164</strong>: Este pedido constituye un comprobante de compraventa electrónico con validez legal en Bolivia.</span>
+          </div>
 
           <div className="flex gap-3 justify-center">
             <button onClick={() => setPedidoConfirmado(null)} className="btn btn-secondary">
@@ -418,9 +419,10 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
                   )}
                 </button>
 
-                <p className="text-xs text-slate-500 text-center">
-                  🔒 Ley N° 164: La confirmación genera un comprobante electrónico con validez legal.
-                </p>
+                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 text-center">
+                  <Lock size={12} className="text-cyan-400 shrink-0" />
+                  <span>Ley N° 164: La confirmación genera un comprobante electrónico con validez legal.</span>
+                </div>
               </form>
             </div>
 

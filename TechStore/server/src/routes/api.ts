@@ -43,9 +43,11 @@ router.get('/pedidos/numero/:numero', pedidoController.obtenerPorNumero);
 router.get('/pedidos/:id', pedidoController.obtenerPorId);
 router.patch('/pedidos/:id/estado', pedidoController.actualizarEstado);
 
-// Usuarios
+// Usuarios y Autenticación
 router.get('/usuarios', usuarioController.listar);
 router.get('/usuarios/:id', usuarioController.obtenerPorId);
+router.post('/auth/login', usuarioController.login);
+router.post('/usuarios/login', usuarioController.login);
 
 // Auditoría ASFI / Seguridad
 import { AuditService } from '../services/AuditService.js';

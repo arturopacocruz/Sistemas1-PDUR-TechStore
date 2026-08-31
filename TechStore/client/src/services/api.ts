@@ -147,9 +147,18 @@ export const api = {
     return handleResponse<Pedido[]>(res);
   },
 
-  // Usuarios
+  // Usuarios y Autenticación
   async getUsuarios(): Promise<Usuario[]> {
     const res = await fetch(`${API_BASE}/usuarios`);
     return handleResponse<Usuario[]>(res);
+  },
+
+  async login(email: string, password: string): Promise<{ message: string; token: string; usuario: Usuario }> {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    return handleResponse<{ message: string; token: string; usuario: Usuario }>(res);
   }
 };
