@@ -193,11 +193,11 @@ Representa la estructura de las clases necesarias para administrar el catálogo,
 
 # Diseño de Base de Datos
 
-La base de datos de **TechStore** permite almacenar y gestionar de manera estructurada la información necesaria para el funcionamiento del MVP.
+La base de datos de **TechStore** permite almacenar y gestionar de manera estructurada la información necesaria para el funcionamiento del MVP. A manera de simplificar el proyecto se opto por utilizar una base de datos estatica.
 
 El modelo físico está compuesto por las entidades **Usuario, Categoría, Producto, Carrito, Item Carrito, Dirección de Entrega, Pedido y Detalle de Pedido**. Las relaciones entre estas entidades se implementan mediante **Claves Primarias (PK)** y **Claves Foráneas (FK)**, garantizando la integridad referencial de la información.
 
-La tabla `USUARIO` permite representar tanto a los clientes como a los administradores mediante el atributo `rol`, evitando la duplicación de información entre diferentes tipos de usuarios.
+La tabla `USUARIO` permite representar tanto a los clientes como a los administradores mediante el atributo `rol`, evitando la duplicación de información entre diferentes tipos de usuarios. 
 
 El diseño también contempla las relaciones entre productos, categorías, carritos y pedidos, permitiendo gestionar el catálogo, las compras y la información de entrega de los clientes.
 
