@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Producto, Categoria } from '../types';
 import { api } from '../services/api';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, PackagePlus, DollarSign, Layers, Image, FileText } from 'lucide-react';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -113,43 +113,42 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <span className="badge badge-warning" style={{ marginBottom: '4px' }}>HU-04</span>
-            <h2 style={{ fontSize: '1.4rem' }}>
-              {productoParaEditar ? 'Editar Producto' : 'Registrar Nuevo Producto'}
-            </h2>
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '580px' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md">
+              <PackagePlus size={20} />
+            </div>
+            <div>
+              <span className="badge badge-warning mb-1">HU-04</span>
+              <h2 className="text-xl font-bold text-white font-heading">
+                {productoParaEditar ? 'Editar Producto' : 'Registrar Nuevo Producto'}
+              </h2>
+            </div>
           </div>
-          <button onClick={onClose} className="btn btn-secondary btn-icon" style={{ borderRadius: '50%' }}>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            title="Cerrar"
+          >
             <X size={18} />
           </button>
         </div>
 
         {error && (
-          <div
-            style={{
-              background: 'var(--danger-bg)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-              padding: '12px',
-              borderRadius: 'var(--radius-sm)',
-              marginBottom: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.88rem'
-            }}
-          >
-            <AlertCircle size={18} />
+          <div className="flex items-start gap-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl p-3.5 mb-6 text-xs">
+            <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="input-group">
-            <label className="input-label">Nombre comercial del producto *</label>
+            <label className="input-label flex items-center gap-1.5">
+              <span>Nombre comercial del producto *</span>
+            </label>
             <input
               type="text"
               maxLength={100}
@@ -161,9 +160,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="input-group">
-              <label className="input-label">Precio (Bs.) *</label>
+              <label className="input-label flex items-center gap-1.5">
+                <DollarSign size={13} className="text-cyan-400" />
+                <span>Precio (Bs.) *</span>
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -177,7 +179,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             </div>
 
             <div className="input-group">
-              <label className="input-label">Stock inicial *</label>
+              <label className="input-label flex items-center gap-1.5">
+                <Layers size={13} className="text-cyan-400" />
+                <span>Stock inicial *</span>
+              </label>
               <input
                 type="number"
                 min="0"
@@ -192,7 +197,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
 
           <div className="input-group">
-            <label className="input-label">Categoría *</label>
+            <label className="input-label flex items-center gap-1.5">
+              <Layers size={13} className="text-cyan-400" />
+              <span>Categoría *</span>
+            </label>
             <select
               value={idCategoria}
               onChange={e => setIdCategoria(Number(e.target.value))}
@@ -207,7 +215,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
 
           <div className="input-group">
-            <label className="input-label">URL de Imagen</label>
+            <label className="input-label flex items-center gap-1.5">
+              <Image size={13} className="text-cyan-400" />
+              <span>URL de Imagen (Opcional)</span>
+            </label>
             <input
               type="url"
               placeholder="https://images.unsplash.com/..."
@@ -218,7 +229,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
 
           <div className="input-group">
-            <label className="input-label">Descripción detallada *</label>
+            <label className="input-label flex items-center gap-1.5">
+              <FileText size={13} className="text-cyan-400" />
+              <span>Descripción detallada *</span>
+            </label>
             <textarea
               required
               placeholder="Especificaciones técnicas, características y compatibilidad..."
@@ -229,7 +243,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+          <div className="flex gap-3 justify-end pt-4 border-t border-white/10">
             <button type="button" onClick={onClose} className="btn btn-secondary" disabled={guardando}>
               Cancelar
             </button>
