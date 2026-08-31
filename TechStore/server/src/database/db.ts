@@ -18,6 +18,7 @@ export function initDatabase() {
       telefono TEXT,
       password_hash TEXT NOT NULL DEFAULT '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6',
       rol TEXT NOT NULL DEFAULT 'CLIENTE' CHECK (rol IN ('CLIENTE', 'ADMINISTRADOR')),
+      estado TEXT NOT NULL DEFAULT 'Activo' CHECK (estado IN ('Activo', 'Inactivo')),
       fecha_registro TEXT NOT NULL DEFAULT (DATE('now'))
     );
 
@@ -69,6 +70,8 @@ export function initDatabase() {
       direccion TEXT NOT NULL,
       ciudad TEXT NOT NULL,
       telefono TEXT NOT NULL,
+      nit_ci TEXT,
+      razon_social TEXT,
       FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON UPDATE CASCADE ON DELETE CASCADE
     );
 
@@ -81,6 +84,8 @@ export function initDatabase() {
       estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Confirmado', 'Preparando', 'Entregado', 'Rechazado')),
       total REAL NOT NULL DEFAULT 0 CHECK (total >= 0),
       hash_integridad TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+      nit_ci TEXT,
+      razon_social TEXT,
       FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON UPDATE CASCADE ON DELETE RESTRICT,
       FOREIGN KEY (id_direccion) REFERENCES direccion_entrega(id_direccion) ON UPDATE CASCADE ON DELETE RESTRICT
     );
@@ -144,11 +149,11 @@ export function initDatabase() {
     const seedUsers = db.transaction(() => {
       // 1. Usuarios
       const insertUser = db.prepare(`
-        INSERT INTO usuario (id_usuario, nombre, email, telefono, password_hash, rol) VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO usuario (id_usuario, nombre, email, telefono, password_hash, rol, estado) VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      insertUser.run(1, 'Arturo Cruz', 'arturo@techstore.com', '70000001', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE');
-      insertUser.run(2, 'Ronald Pérez', 'ronald@techstore.com', '70000002', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE');
-      insertUser.run(3, 'Administrador TechStore', 'admin@techstore.com', '70000003', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'ADMINISTRADOR');
+      insertUser.run(1, 'Arturo Cruz', 'arturo@techstore.com', '70000001', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE', 'Activo');
+      insertUser.run(2, 'Ronald Pérez', 'ronald@techstore.com', '70000002', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'CLIENTE', 'Activo');
+      insertUser.run(3, 'Administrador TechStore', 'admin@techstore.com', '70000003', '$2a$12$e8Yk1.K1K7w7oH1x3YFGe.a9GgN5W2WkSjC7zZ7a0P1Q9b8U5j9s6', 'ADMINISTRADOR', 'Activo');
 
       // 2. Categorias
       const insertCat = db.prepare(`

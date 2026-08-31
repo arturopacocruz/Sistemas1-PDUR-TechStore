@@ -11,6 +11,7 @@ interface AuthContextType {
   openLoginModal: () => void;
   closeLoginModal: () => void;
   login: (email: string, password: string) => Promise<void>;
+  register: (datos: { nombre: string; email: string; telefono?: string; password: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -45,6 +46,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoginModalOpen(false);
   };
 
+  const register = async (datos: { nombre: string; email: string; telefono?: string; password: string }) => {
+    const res = await api.registro(datos);
+    setUsuarioActual(res.usuario);
+    localStorage.setItem('techstore_user', JSON.stringify(res.usuario));
+    localStorage.setItem('techstore_token', res.token);
+    setIsLoginModalOpen(false);
+  };
+
   const logout = () => {
     setUsuarioActual(null);
     localStorage.removeItem('techstore_user');
@@ -68,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openLoginModal,
         closeLoginModal,
         login,
+        register,
         logout
       }}
     >

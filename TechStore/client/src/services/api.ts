@@ -1,4 +1,4 @@
-import type { Producto, Categoria, Carrito, Pedido, MetricasAdmin, Usuario, DireccionEntrega } from '../types';
+import type { Producto, Categoria, Carrito, Pedido, MetricasAdmin, Usuario, DireccionEntrega, LogAuditoria } from '../types';
 
 const API_BASE = '/api';
 
@@ -131,7 +131,9 @@ export const api = {
         nombre_receptor: datosEntrega.nombre_receptor,
         direccion: datosEntrega.direccion,
         ciudad: datosEntrega.ciudad,
-        telefono: datosEntrega.telefono
+        telefono: datosEntrega.telefono,
+        nit_ci: datosEntrega.nit_ci,
+        razon_social: datosEntrega.razon_social
       })
     });
     return handleResponse<{ message: string; pedido: Pedido }>(res);
@@ -160,5 +162,52 @@ export const api = {
       body: JSON.stringify({ email, password })
     });
     return handleResponse<{ message: string; token: string; usuario: Usuario }>(res);
+  },
+
+  async registro(datos: { nombre: string; email: string; telefono?: string; password: string }): Promise<{ message: string; token: string; usuario: Usuario }> {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
+    return handleResponse<{ message: string; token: string; usuario: Usuario }>(res);
+  },
+
+  async crearUsuarioAdmin(datos: { nombre: string; email: string; telefono?: string; rol: string; estado: string }): Promise<Usuario> {
+    const res = await fetch(`${API_BASE}/usuarios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
+    return handleResponse<Usuario>(res);
+  },
+
+  async actualizarUsuarioAdmin(id: number, datos: Partial<Usuario>): Promise<Usuario> {
+    const res = await fetch(`${API_BASE}/usuarios/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
+    return handleResponse<Usuario>(res);
+  },
+
+  async cambiarEstadoUsuario(id: number, estado: 'Activo' | 'Inactivo'): Promise<{ message: string; id_usuario: number; estado: string }> {
+    const res = await fetch(`${API_BASE}/usuarios/${id}/estado`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado })
+    });
+    return handleResponse<{ message: string; id_usuario: number; estado: string }>(res);
+  },
+
+  // Auditoría ASFI
+  async getAuditLogs(): Promise<LogAuditoria[]> {
+    const res = await fetch(`${API_BASE}/audit/logs`);
+    return handleResponse<LogAuditoria[]>(res);
+  },
+
+  async verificarLogAuditoria(idLog: number): Promise<{ id_log: number; inalterado: boolean }> {
+    const res = await fetch(`${API_BASE}/audit/verificar/${idLog}`);
+    return handleResponse<{ id_log: number; inalterado: boolean }>(res);
   }
 };

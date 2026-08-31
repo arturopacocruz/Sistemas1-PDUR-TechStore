@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, X, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, X, AlertCircle, LogIn, Lock } from 'lucide-react';
 
 interface CarritoViewProps {
   onProceedToCheckout: () => void;
@@ -17,7 +18,9 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
     cargando
   } = useCart();
 
+  const { estaAutenticado, openLoginModal } = useAuth();
   const [inputErrors, setInputErrors] = useState<{ [idProducto: number]: string }>({});
+  const [authError, setAuthError] = useState<string | null>(null);
 
   if (!isCartOpen) return null;
 
@@ -27,7 +30,6 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
 
   const handleCantidadChange = async (idProducto: number, nuevaCantidad: number, stockMax: number) => {
     if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
-      // If 0, delete item
       await eliminarProducto(idProducto);
       setInputErrors(prev => {
         const copy = { ...prev };
@@ -45,7 +47,6 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
       return;
     }
 
-    // Clear error
     setInputErrors(prev => {
       const copy = { ...prev };
       delete copy[idProducto];
@@ -53,6 +54,17 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
     });
 
     await modificarCantidad(idProducto, nuevaCantidad);
+  };
+
+  const handleCheckoutClick = () => {
+    if (!estaAutenticado) {
+      setAuthError('Debes iniciar sesión o registrar una cuenta para procesar tu pedido.');
+      openLoginModal();
+      return;
+    }
+    setAuthError(null);
+    closeCart();
+    onProceedToCheckout();
   };
 
   return (
@@ -81,6 +93,13 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
 
         {/* Cart Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {authError && (
+            <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl">
+              <Lock size={15} className="shrink-0 text-amber-400" />
+              <span>{authError}</span>
+            </div>
+          )}
+
           {!tieneItems ? (
             <div className="text-center py-16 px-4 text-slate-400">
               <ShoppingBag size={52} className="mx-auto mb-4 text-slate-600 opacity-40" />
@@ -173,7 +192,7 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
                         </button>
                       </div>
 
-                      {/* Subtotal (cantidad * precio_unitario) */}
+                      {/* Subtotal */}
                       <div className="text-right">
                         <span className="text-[11px] text-slate-400 block">Subtotal:</span>
                         <span className="text-sm font-bold text-cyan-400 font-heading">
@@ -201,6 +220,21 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
         {/* Footer Summary & Checkout Trigger */}
         {tieneItems && (
           <div className="p-5 border-t border-white/10 bg-slate-950/95 space-y-3">
+            {!estaAutenticado && (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+                <div className="flex items-center gap-2">
+                  <Lock size={14} />
+                  <span>Requiere inicio de sesión</span>
+                </div>
+                <button
+                  onClick={openLoginModal}
+                  className="text-[11px] font-bold text-white underline hover:text-amber-200"
+                >
+                  Ingresar
+                </button>
+              </div>
+            )}
+
             <div className="flex justify-between items-center">
               <div>
                 <span className="text-xs text-slate-400 block">Total a Pagar</span>
@@ -212,14 +246,11 @@ export const CarritoView: React.FC<CarritoViewProps> = ({ onProceedToCheckout })
             </div>
 
             <button
-              onClick={() => {
-                closeCart();
-                onProceedToCheckout();
-              }}
+              onClick={handleCheckoutClick}
               className="w-full btn btn-primary py-3 flex items-center justify-center gap-2 text-sm font-bold shadow-lg shadow-cyan-500/25"
             >
-              <span>Proceder al Checkout (HU-03)</span>
-              <ArrowRight size={16} />
+              <span>{estaAutenticado ? 'Proceder al Checkout (HU-03)' : 'Iniciar Sesión para Comprar'}</span>
+              {estaAutenticado ? <ArrowRight size={16} /> : <LogIn size={16} />}
             </button>
           </div>
         )}

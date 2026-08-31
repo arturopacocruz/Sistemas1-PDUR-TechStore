@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
-import type { Pedido, DireccionEntrega } from '../types';
+import type { Pedido, DireccionEntrega, Usuario } from '../types';
 import {
   CheckCircle2, MapPin, ArrowLeft, AlertCircle,
   ShoppingBag, Phone, Home, User, RefreshCw, ClipboardList,
-  ChevronDown, ChevronUp, Lock
+  ChevronDown, ChevronUp, Lock, Download, MessageSquare, Receipt, FileText
 } from 'lucide-react';
 
 interface PedidoViewProps {
@@ -14,7 +14,6 @@ interface PedidoViewProps {
   isCheckoutMode?: boolean;
 }
 
-// Estados del pedido con su color y texto según DD §4.7
 const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   Pendiente:  { label: 'Pendiente',  color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/30' },
   Confirmado: { label: 'Confirmado', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30' },
@@ -30,9 +29,10 @@ const INITIAL_FORM: DireccionEntrega = {
   direccion: '',
   ciudad: 'Tarija',
   telefono: '',
+  nit_ci: '',
+  razon_social: ''
 };
 
-// Validación local por campo (espejo del DD §4.6 DIRECCION_ENTREGA)
 function validarCampo(field: FormField, value: string): string | null {
   const val = value.trim();
   switch (field) {
@@ -57,6 +57,85 @@ function validarCampo(field: FormField, value: string): string | null {
   }
 }
 
+function generarContenidoTxt(pedido: Pedido, usuario: Usuario | null): string {
+  const fechaStr = new Date().toLocaleString('es-BO', { timeZone: 'America/La_Paz' });
+  const separador = '======================================================================';
+  const subseparador = '----------------------------------------------------------------------';
+
+  let itemsTexto = '';
+  if (pedido.detalles && pedido.detalles.length > 0) {
+    itemsTexto = pedido.detalles.map(d => {
+      const cant = String(d.cantidad).padEnd(4);
+      const desc = (d.producto_nombre || `Item #${d.id_producto}`).padEnd(36).substring(0, 36);
+      const pu = `Bs. ${d.precio_unitario.toFixed(2)}`.padEnd(12);
+      const sub = `Bs. ${d.subtotal.toFixed(2)}`;
+      return `${cant}  ${desc} ${pu} ${sub}`;
+    }).join('\n');
+  }
+
+  const facturacionTexto = pedido.nit_ci ? `
+${subseparador}
+2. DATOS DE FACTURACIÓN (LEY N° 453)
+${subseparador}
+NIT / C.I.:             ${pedido.nit_ci}
+Razón Social / Nombre:  ${pedido.razon_social || pedido.direccion?.nombre_receptor || 'Consumidor Final'}
+` : `
+${subseparador}
+2. DATOS DE FACTURACIÓN (LEY N° 453)
+${subseparador}
+Modalidad:              Sin factura comercial / Consumidor Final
+`;
+
+  return `${separador}
+                     TECHSTORE BOLIVIA - MVP
+            COMPROBANTE DE PEDIDO ELECTRÓNICO (LEY 164)
+${separador}
+
+NÚMERO DE PEDIDO:       ${pedido.numero_pedido}
+FECHA Y HORA (BOLIVIA): ${fechaStr}
+SELLO DE INTEGRIDAD:    ${pedido.hash_integridad || 'SHA256-HMAC-VERIFIED'}
+ESTADO DEL PEDIDO:      ${pedido.estado}
+
+${subseparador}
+1. DATOS DEL CLIENTE Y ENTREGA
+${subseparador}
+Cliente:                ${usuario?.nombre || pedido.direccion?.nombre_receptor || 'Cliente TechStore'}
+Correo Electrónico:     ${usuario?.email || 'N/A'}
+Teléfono de Contacto:   ${pedido.direccion?.telefono || 'N/A'}
+Ciudad de Despacho:     ${pedido.direccion?.ciudad || 'Tarija'}, Bolivia
+Dirección Exacta:       ${pedido.direccion?.direccion || 'N/A'}
+${facturacionTexto}
+${subseparador}
+3. DETALLE DE PRODUCTOS COMPRADOS
+${subseparador}
+CANT.  DESCRIPCIÓN                          P. UNIT.     SUBTOTAL
+${subseparador}
+${itemsTexto}
+${subseparador}
+TOTAL GENERAL A CANCELAR:                                Bs. ${pedido.total.toFixed(2)}
+${separador}
+
+SERVICIO WEB DE PEDIDOS - SIMULACIÓN Y DESPACHO VÍA WHATSAPP:
+Este documento constituye la constancia electrónica oficial generada
+por TechStore Tarija para la coordinación de la entrega física.
+Para coordinar el pago en efectivo contra entrega o mediante transferencia
+QR Banco Unión/BNB, reenvíe este pedido al WhatsApp oficial:
+https://wa.me/59170000001?text=Hola%20TechStore,%20confirmo%20mi%20pedido%20${pedido.numero_pedido}
+`;
+}
+
+function descargarTxt(contenido: string, numeroPedido: string) {
+  const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Pedido_${numeroPedido}_TechStore.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheckoutMode = false }) => {
   const { usuarioActual } = useAuth();
   const { carrito, refrescarCarrito } = useCart();
@@ -66,10 +145,12 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
   const [procesando, setProcesando] = useState(false);
   const [errorCheckout, setErrorCheckout] = useState<string | null>(null);
   const [pedidoConfirmado, setPedidoConfirmado] = useState<Pedido | null>(null);
+  const [txtGenerado, setTxtGenerado] = useState<string>('');
   const [mostrarCheckout, setMostrarCheckout] = useState(isCheckoutMode);
   const [pedidoExpandido, setPedidoExpandido] = useState<number | null>(null);
+  const [requiereFactura, setRequiereFactura] = useState(false);
 
-  // Estado del formulario: valores + errores por campo (HU-03 UC4)
+  // Form state
   const [formData, setFormData] = useState<DireccionEntrega>(() => ({
     ...INITIAL_FORM,
     nombre_receptor: usuarioActual?.nombre || '',
@@ -102,31 +183,31 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
     }
   };
 
-  // Validar campo al salir del input (onBlur)
-  const handleBlur = (field: FormField) => {
+  const handleFieldChange = (field: FormField, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    const err = validarCampo(field, value);
+    setFormErrors(prev => ({ ...prev, [field]: err || undefined }));
+  };
+
+  const handleFieldBlur = (field: FormField) => {
     setCamposTocados(prev => ({ ...prev, [field]: true }));
     const err = validarCampo(field, formData[field] as string);
-    setFormErrors(prev => ({ ...prev, [field]: err ?? undefined }));
+    setFormErrors(prev => ({ ...prev, [field]: err || undefined }));
   };
 
-  const handleChange = (field: FormField, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Re-validar sólo si el campo ya fue tocado
-    if (camposTocados[field]) {
-      const err = validarCampo(field, value);
-      setFormErrors(prev => ({ ...prev, [field]: err ?? undefined }));
-    }
-  };
-
-  // Validar todos los campos antes del submit
   const validarFormulario = (): boolean => {
-    const campos: FormField[] = ['nombre_receptor', 'telefono', 'ciudad', 'direccion'];
-    const nuevosErrores: Partial<Record<FormField, string>> = {};
+    const fields: FormField[] = ['nombre_receptor', 'telefono', 'ciudad', 'direccion'];
     let valido = true;
-    for (const campo of campos) {
-      const err = validarCampo(campo, formData[campo] as string);
-      if (err) { nuevosErrores[campo] = err; valido = false; }
-    }
+    const nuevosErrores: Partial<Record<FormField, string>> = {};
+
+    fields.forEach(f => {
+      const err = validarCampo(f, formData[f] as string);
+      if (err) {
+        valido = false;
+        nuevosErrores[f] = err;
+      }
+    });
+
     setFormErrors(nuevosErrores);
     setCamposTocados({ nombre_receptor: true, telefono: true, ciudad: true, direccion: true });
     return valido;
@@ -136,10 +217,8 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
     e.preventDefault();
     if (!usuarioActual) return;
 
-    // 1. Validación local completa (espejo del DD)
     if (!validarFormulario()) return;
 
-    // 2. Verificar carrito no vacío (HU-03 Criterio 1)
     const items = carrito?.items || [];
     if (items.length === 0) {
       setErrorCheckout('El carrito está vacío. Agregue productos antes de realizar el pedido.');
@@ -149,12 +228,24 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
     try {
       setProcesando(true);
       setErrorCheckout(null);
-      const res = await api.checkout(usuarioActual.id_usuario, formData);
+
+      const datosEnvio: DireccionEntrega = {
+        ...formData,
+        nit_ci: requiereFactura ? formData.nit_ci : undefined,
+        razon_social: requiereFactura ? formData.razon_social : undefined
+      };
+
+      const res = await api.checkout(usuarioActual.id_usuario, datosEnvio);
       setPedidoConfirmado(res.pedido);
+
+      // Generar y descargar archivo .txt automáticamente
+      const txt = generarContenidoTxt(res.pedido, usuarioActual);
+      setTxtGenerado(txt);
+      descargarTxt(txt, res.pedido.numero_pedido);
+
       await refrescarCarrito();
       await cargarPedidosUsuario();
       setMostrarCheckout(false);
-      // Reset form for next use
       setFormData({ ...INITIAL_FORM, nombre_receptor: usuarioActual.nombre, telefono: usuarioActual.telefono || '' });
       setFormErrors({});
       setCamposTocados({});
@@ -177,12 +268,15 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
   const items = carrito?.items || [];
   const total = carrito?.total || 0;
 
-  // ── 1. Pantalla de Confirmación (HU-03 UC9) ──────────────────────────────
+  // ── 1. Pantalla de Confirmación de Pedido (HU-03 + TXT Download) ─────────
   if (pedidoConfirmado) {
+    const whatsappUrl = `https://wa.me/59170000001?text=${encodeURIComponent(
+      `Hola TechStore, acabo de realizar el pedido *${pedidoConfirmado.numero_pedido}* por un total de *Bs. ${pedidoConfirmado.total.toFixed(2)}* para entrega en Tarija. Adjunto comprobante.`
+    )}`;
+
     return (
-      <div className="page-container" style={{ maxWidth: '780px' }}>
-        <div className="rounded-3xl border border-emerald-500/25 bg-slate-900/80 p-10 md:p-12 text-center shadow-xl shadow-emerald-500/5 space-y-6">
-          {/* Success icon */}
+      <div className="page-container" style={{ maxWidth: '820px' }}>
+        <div className="rounded-3xl border border-emerald-500/25 bg-slate-900/80 p-8 md:p-12 text-center shadow-xl space-y-6">
           <div className="w-20 h-20 rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-2">
             <CheckCircle2 size={44} className="text-emerald-400" />
           </div>
@@ -194,57 +288,65 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
           <h2 className="text-3xl md:text-4xl font-extrabold text-white font-heading">¡Gracias por tu compra!</h2>
           <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
             Tu pedido fue confirmado y el inventario fue descontado en tiempo real.
-            Recibirás tus productos en Tarija según la dirección indicada.
+            Se ha descargado automáticamente tu comprobante en formato <strong>.TXT</strong>.
           </p>
 
-          {/* Número de pedido autogenerado (HU-03 UC8) */}
+          {/* Número de Pedido y Total */}
           <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-6">
             <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-2">Número de Identificación del Pedido</p>
             <p className="text-3xl md:text-4xl font-extrabold text-cyan-400 font-heading tracking-widest mb-2">
               {pedidoConfirmado.numero_pedido}
             </p>
             <p className="text-xs text-slate-400">
-              Fecha: {pedidoConfirmado.fecha} · Total: <span className="text-white font-bold text-sm">Bs. {pedidoConfirmado.total.toFixed(2)}</span>
+              Fecha: {pedidoConfirmado.fecha} &bull; Total: <span className="text-white font-bold text-sm">Bs. {pedidoConfirmado.total.toFixed(2)}</span>
             </p>
           </div>
 
-          {/* Dirección de entrega */}
-          {pedidoConfirmado.direccion && (
-            <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-5 text-left text-sm space-y-1">
-              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2 mb-2">
-                <MapPin size={14} />
-                Dirección de Entrega Registrada
-              </p>
-              <p className="text-white font-bold text-base">{pedidoConfirmado.direccion.nombre_receptor}</p>
-              <p className="text-slate-300">{pedidoConfirmado.direccion.direccion}, {pedidoConfirmado.direccion.ciudad}</p>
-              <p className="text-slate-400">Tel: {pedidoConfirmado.direccion.telefono}</p>
-            </div>
-          )}
+          {/* Action Buttons: TXT download & WhatsApp */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={() => descargarTxt(txtGenerado || generarContenidoTxt(pedidoConfirmado, usuarioActual), pedidoConfirmado.numero_pedido)}
+              className="btn btn-secondary flex items-center justify-center gap-2 py-3 text-sm font-semibold"
+            >
+              <Download size={16} className="text-cyan-400" />
+              <span>Volver a Descargar .TXT</span>
+            </button>
 
-          {/* Detalle de productos del pedido */}
-          {pedidoConfirmado.detalles && pedidoConfirmado.detalles.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-slate-800/40 divide-y divide-white/5 text-left text-sm overflow-hidden">
-              {pedidoConfirmado.detalles.map(det => (
-                <div key={det.id_detalle} className="flex justify-between items-center px-5 py-3">
-                  <span className="text-slate-200 font-medium">{det.producto_nombre} <span className="text-slate-400 text-xs font-bold">×{det.cantidad}</span></span>
-                  <span className="text-cyan-300 font-bold">Bs. {det.subtotal.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Cumplimiento Ley N° 164 */}
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-950/70 rounded-xl px-4 py-3 border border-white/5">
-            <Lock size={14} className="text-cyan-400 shrink-0" />
-            <span>Cumplimiento <strong className="text-slate-200">Ley N° 164</strong>: Este pedido constituye un comprobante de compraventa electrónico con validez legal en Bolivia.</span>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-2 py-3 text-sm font-semibold shadow-lg shadow-emerald-600/20"
+            >
+              <MessageSquare size={16} />
+              <span>Confirmar vía WhatsApp (+591)</span>
+            </a>
           </div>
 
-          <div className="flex flex-wrap gap-4 justify-center pt-2">
-            <button onClick={() => setPedidoConfirmado(null)} className="btn btn-secondary">
-              Ver Historial de Pedidos
+          {/* TXT Receipt Preview Box */}
+          <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-left font-mono text-xs text-slate-400 max-h-48 overflow-y-auto">
+            <div className="text-[11px] font-sans uppercase font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+              <FileText size={14} className="text-cyan-400" />
+              <span>Vista previa del Comprobante Generado (.TXT):</span>
+            </div>
+            <pre className="whitespace-pre-wrap">{txtGenerado || generarContenidoTxt(pedidoConfirmado, usuarioActual)}</pre>
+          </div>
+
+          {/* Action Footer */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+            <button
+              onClick={() => {
+                setPedidoConfirmado(null);
+                setMostrarCheckout(false);
+              }}
+              className="btn btn-secondary"
+            >
+              <ClipboardList size={16} />
+              <span>Ver Mis Pedidos</span>
             </button>
             <button onClick={onBackToCatalog} className="btn btn-primary">
-              Volver a la Tienda
+              <ShoppingBag size={16} />
+              <span>Seguir Comprando</span>
             </button>
           </div>
         </div>
@@ -252,303 +354,303 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
     );
   }
 
-  // ── 2. Formulario de Checkout (HU-03 UC3 + UC4) ──────────────────────────
+  // ── 2. Formulario de Checkout (HU-03) ────────────────────────────────────
   if (mostrarCheckout) {
     return (
       <div className="page-container" style={{ maxWidth: '1100px' }}>
         <button
           onClick={() => setMostrarCheckout(false)}
-          className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition-colors mb-8 px-3 py-1.5 rounded-lg hover:bg-white/5 w-fit"
+          className="btn btn-secondary btn-sm mb-6 flex items-center gap-2"
         >
-          <ArrowLeft size={16} />
-          <span>Volver al Carrito</span>
+          <ArrowLeft size={14} />
+          <span>Volver al Historial</span>
         </button>
 
-        {/* HU-03: Carrito vacío no puede hacer checkout (Criterio 1) */}
-        {items.length === 0 ? (
-          <div className="text-center py-20 max-w-md mx-auto">
-            <div className="rounded-2xl border border-white/8 bg-slate-900/40 p-8">
-              <ShoppingBag size={48} className="mx-auto mb-4 text-slate-600" />
-              <h2 className="text-xl font-bold text-white mb-2">Carrito vacío</h2>
-              <p className="text-slate-400 text-sm mb-6">No puedes realizar un pedido con el carrito vacío.</p>
-              <button onClick={onBackToCatalog} className="btn btn-primary">Ir al Catálogo</button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Form Column */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="glass-panel p-6 md:p-8 rounded-3xl space-y-6">
+              <div>
+                <span className="badge badge-warning mb-2">HU-03 &bull; Finalizar Compra</span>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-white font-heading">
+                  Datos de Entrega y Facturación
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Ingrese la dirección en Tarija para la entrega de sus productos.
+                </p>
+              </div>
 
-            {/* ── Formulario de datos de entrega (HU-03 UC3) ── */}
-            <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-md">
-              <h2 className="text-xl font-bold text-white flex items-center gap-3 mb-6 font-heading">
-                <MapPin size={22} className="text-cyan-400" />
-                <span>Datos de Entrega</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/25 text-cyan-400 font-mono">HU-03</span>
-              </h2>
-
-              {/* Error global */}
               {errorCheckout && (
-                <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-2xl p-4 mb-6 text-sm">
-                  <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-400" />
+                <div className="flex items-start gap-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl p-3.5 text-xs">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
                   <span>{errorCheckout}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmitCheckout} noValidate className="space-y-5">
-
-                {/* Nombre receptor */}
-                <div className="space-y-2">
-                  <label htmlFor="hu03-nombre" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    <User size={13} className="text-cyan-400" />
-                    <span>Nombre de quien recibe *</span>
+              <form onSubmit={handleSubmitCheckout} className="space-y-4">
+                <div className="input-group">
+                  <label className="input-label flex items-center gap-1.5">
+                    <User size={14} className="text-cyan-400" />
+                    <span>Nombre completo del receptor *</span>
                   </label>
                   <input
-                    id="hu03-nombre"
                     type="text"
                     maxLength={100}
-                    placeholder="Ej. Arturo Cruz"
                     value={formData.nombre_receptor}
-                    onChange={e => handleChange('nombre_receptor', e.target.value)}
-                    onBlur={() => handleBlur('nombre_receptor')}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all ${
-                      formErrors.nombre_receptor
-                        ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
-                    }`}
+                    onChange={e => handleFieldChange('nombre_receptor', e.target.value)}
+                    onBlur={() => handleFieldBlur('nombre_receptor')}
+                    placeholder="Ej. Arturo Cruz"
+                    className={`input-field ${camposTocados.nombre_receptor && formErrors.nombre_receptor ? 'border-rose-500' : ''}`}
                   />
-                  {formErrors.nombre_receptor && (
-                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1.5">
-                      <AlertCircle size={12} /><span>{formErrors.nombre_receptor}</span>
-                    </p>
+                  {camposTocados.nombre_receptor && formErrors.nombre_receptor && (
+                    <span className="text-xs text-rose-400 mt-1">{formErrors.nombre_receptor}</span>
                   )}
                 </div>
 
-                {/* Teléfono */}
-                <div className="space-y-2">
-                  <label htmlFor="hu03-telefono" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    <Phone size={13} className="text-cyan-400" />
-                    <span>Teléfono de contacto *</span>
-                  </label>
-                  <input
-                    id="hu03-telefono"
-                    type="tel"
-                    maxLength={20}
-                    placeholder="Ej. 70000001"
-                    value={formData.telefono}
-                    onChange={e => handleChange('telefono', e.target.value)}
-                    onBlur={() => handleBlur('telefono')}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all ${
-                      formErrors.telefono
-                        ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
-                    }`}
-                  />
-                  {formErrors.telefono && (
-                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1.5">
-                      <AlertCircle size={12} /><span>{formErrors.telefono}</span>
-                    </p>
-                  )}
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="input-group">
+                    <label className="input-label flex items-center gap-1.5">
+                      <Phone size={14} className="text-cyan-400" />
+                      <span>Teléfono / WhatsApp *</span>
+                    </label>
+                    <input
+                      type="tel"
+                      maxLength={20}
+                      value={formData.telefono}
+                      onChange={e => handleFieldChange('telefono', e.target.value)}
+                      onBlur={() => handleFieldBlur('telefono')}
+                      placeholder="Ej. 70000001"
+                      className={`input-field ${camposTocados.telefono && formErrors.telefono ? 'border-rose-500' : ''}`}
+                    />
+                    {camposTocados.telefono && formErrors.telefono && (
+                      <span className="text-xs text-rose-400 mt-1">{formErrors.telefono}</span>
+                    )}
+                  </div>
 
-                {/* Ciudad */}
-                <div className="space-y-2">
-                  <label htmlFor="hu03-ciudad" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    <MapPin size={13} className="text-cyan-400" />
-                    <span>Ciudad *</span>
-                  </label>
-                  <input
-                    id="hu03-ciudad"
-                    type="text"
-                    maxLength={100}
-                    placeholder="Ej. Tarija"
-                    value={formData.ciudad}
-                    onChange={e => handleChange('ciudad', e.target.value)}
-                    onBlur={() => handleBlur('ciudad')}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all ${
-                      formErrors.ciudad
-                        ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
-                    }`}
-                  />
-                  {formErrors.ciudad && (
-                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1.5">
-                      <AlertCircle size={12} /><span>{formErrors.ciudad}</span>
-                    </p>
-                  )}
-                </div>
-
-                {/* Dirección */}
-                <div className="space-y-2">
-                  <label htmlFor="hu03-direccion" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    <Home size={13} className="text-cyan-400" />
-                    <span>Dirección física exacta *</span>
-                  </label>
-                  <textarea
-                    id="hu03-direccion"
-                    maxLength={255}
-                    rows={3}
-                    placeholder="Ej. Av. Las Américas #450, frente a la plaza principal..."
-                    value={formData.direccion}
-                    onChange={e => handleChange('direccion', e.target.value)}
-                    onBlur={() => handleBlur('direccion')}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all resize-none ${
-                      formErrors.direccion
-                        ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
-                    }`}
-                  />
-                  <div className="flex justify-between mt-1">
-                    {formErrors.direccion
-                      ? <p className="text-rose-400 text-xs flex items-center gap-1.5"><AlertCircle size={12} /><span>{formErrors.direccion}</span></p>
-                      : <span />
-                    }
-                    <span className="text-xs text-slate-400">{formData.direccion.length}/255</span>
+                  <div className="input-group">
+                    <label className="input-label flex items-center gap-1.5">
+                      <MapPin size={14} className="text-cyan-400" />
+                      <span>Ciudad de Entrega *</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={formData.ciudad}
+                      onChange={e => handleFieldChange('ciudad', e.target.value)}
+                      onBlur={() => handleFieldBlur('ciudad')}
+                      placeholder="Tarija"
+                      className="input-field"
+                    />
                   </div>
                 </div>
 
-                {/* Botón de confirmación */}
+                <div className="input-group">
+                  <label className="input-label flex items-center gap-1.5">
+                    <Home size={14} className="text-cyan-400" />
+                    <span>Dirección física exacta y referencias *</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    maxLength={255}
+                    value={formData.direccion}
+                    onChange={e => handleFieldChange('direccion', e.target.value)}
+                    onBlur={() => handleFieldBlur('direccion')}
+                    placeholder="Ej. Av. Las Américas #450, entre Calle 1 y 2, Barrio Senac (portón negro)"
+                    className={`textarea-field ${camposTocados.direccion && formErrors.direccion ? 'border-rose-500' : ''}`}
+                  />
+                  {camposTocados.direccion && formErrors.direccion && (
+                    <span className="text-xs text-rose-400 mt-1">{formErrors.direccion}</span>
+                  )}
+                </div>
+
+                {/* Optional Facturación Toggle */}
+                <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={requiereFactura}
+                      onChange={e => setRequiereFactura(e.target.checked)}
+                      className="w-4 h-4 rounded border-white/20 bg-slate-900 text-cyan-500 focus:ring-cyan-500"
+                    />
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Receipt size={14} className="text-cyan-400" />
+                      <span>Solicitar Factura Comercial (Ley N° 453)</span>
+                    </span>
+                  </label>
+
+                  {requiereFactura && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10">
+                      <div className="input-group mb-0">
+                        <label className="input-label">NIT o C.I. *</label>
+                        <input
+                          type="text"
+                          required={requiereFactura}
+                          value={formData.nit_ci || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, nit_ci: e.target.value }))}
+                          placeholder="Ej. 1234567019"
+                          className="input-field"
+                        />
+                      </div>
+                      <div className="input-group mb-0">
+                        <label className="input-label">Razón Social / Nombre *</label>
+                        <input
+                          type="text"
+                          required={requiereFactura}
+                          value={formData.razon_social || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, razon_social: e.target.value }))}
+                          placeholder="Ej. Cruz & Hnos S.R.L."
+                          className="input-field"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
-                  id="hu03-confirmar"
-                  disabled={procesando}
-                  className="w-full btn btn-primary py-3.5 text-base font-bold shadow-lg shadow-cyan-500/20 disabled:opacity-60 disabled:cursor-not-allowed mt-4"
+                  disabled={procesando || items.length === 0}
+                  className="w-full btn btn-primary py-3.5 text-base font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 mt-4"
                 >
-                  {procesando ? (
-                    <><RefreshCw size={16} className="animate-spin" /><span>Verificando stock y procesando...</span></>
-                  ) : (
-                    <><CheckCircle2 size={16} /><span>Confirmar Pedido · Bs. {total.toFixed(2)}</span></>
-                  )}
+                  <Lock size={16} />
+                  <span>{procesando ? 'Procesando pedido...' : `Confirmar Pedido (Bs. ${total.toFixed(2)})`}</span>
                 </button>
-
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-400 text-center pt-2">
-                  <Lock size={13} className="text-cyan-400 shrink-0" />
-                  <span>Ley N° 164: La confirmación genera un comprobante electrónico con validez legal.</span>
-                </div>
               </form>
             </div>
+          </div>
 
-            {/* ── Resumen de la orden ── */}
-            <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-8 h-fit shadow-md space-y-6">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2.5 font-heading">
-                <ShoppingBag size={20} className="text-cyan-400" />
-                <span>Resumen de la Orden</span>
+          {/* Order Summary Sidebar */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="glass-panel p-6 rounded-3xl space-y-4">
+              <h3 className="text-base font-bold text-white font-heading pb-3 border-b border-white/10">
+                Resumen de Compra ({items.length} productos)
               </h3>
-              <div className="space-y-4 divide-y divide-white/5">
-                {items.map(item => (
-                  <div key={item.id_item} className="flex justify-between items-center pt-3 first:pt-0">
-                    <div>
-                      <p className="text-sm font-bold text-white leading-snug">{item.producto?.nombre}</p>
-                      <p className="text-xs text-slate-400 mt-1">{item.cantidad} × Bs. {item.precio_unitario.toFixed(2)}</p>
+
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                {items.map(it => (
+                  <div key={it.id_item} className="flex justify-between items-center text-xs p-2 rounded-xl bg-slate-950/60 border border-white/5">
+                    <div className="min-w-0 flex-1 mr-3">
+                      <p className="font-semibold text-white truncate">{it.producto?.nombre}</p>
+                      <p className="text-slate-400">{it.cantidad} x Bs. {it.precio_unitario.toFixed(2)}</p>
                     </div>
-                    <span className="text-sm font-bold text-cyan-400 shrink-0 ml-4">Bs. {item.subtotal.toFixed(2)}</span>
+                    <span className="font-bold text-cyan-400 font-mono">Bs. {it.subtotal.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center pt-4 border-t border-white/10">
-                <span className="text-base font-bold text-slate-300">Total Final</span>
-                <span className="text-3xl font-extrabold text-white font-heading">Bs. {total.toFixed(2)}</span>
-              </div>
-              <div className="rounded-2xl bg-cyan-500/10 border border-cyan-500/20 p-4 text-xs text-slate-300 leading-relaxed">
-                El inventario de los productos se descuenta en el momento exacto de confirmación del pedido.
+
+              <div className="pt-4 border-t border-white/10 space-y-2">
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>Subtotal</span>
+                  <span>Bs. {total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-emerald-400">
+                  <span>Envío Local (Tarija)</span>
+                  <span>Gratis</span>
+                </div>
+                <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-white/5">
+                  <span>Total General</span>
+                  <span className="text-cyan-400 font-mono">Bs. {total.toFixed(2)}</span>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
   // ── 3. Historial de Pedidos del Usuario ───────────────────────────────────
   return (
-    <div className="page-container" style={{ maxWidth: '960px' }}>
-      <div className="flex flex-wrap justify-between items-center gap-6 mb-10 pb-4 border-b border-white/10">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-extrabold text-white font-heading">Mis Pedidos</h1>
-          <p className="text-slate-400 text-sm">
-            Historial de compras de <strong className="text-white">{usuarioActual?.nombre}</strong>
+    <div className="page-container space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-white/10">
+        <div>
+          <span className="badge badge-warning mb-2">Historial</span>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white font-heading">
+            Mis Pedidos Registrados
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400 mt-1">
+            Seguimiento en tiempo real de tus órdenes y comprobantes de compra.
           </p>
         </div>
-        {items.length > 0 && (
-          <button onClick={() => setMostrarCheckout(true)} className="btn btn-primary">
-            <ShoppingBag size={16} />
-            Completar Pedido Actual ({items.length})
+
+        <div className="flex items-center gap-3">
+          <button onClick={cargarPedidosUsuario} className="btn btn-secondary btn-sm flex items-center gap-2">
+            <RefreshCw size={14} className={cargandoPedidos ? 'animate-spin' : ''} />
+            <span>Actualizar</span>
           </button>
-        )}
+          <button onClick={onBackToCatalog} className="btn btn-primary btn-sm flex items-center gap-2">
+            <ShoppingBag size={14} />
+            <span>Ver Catálogo</span>
+          </button>
+        </div>
       </div>
 
-      {cargandoPedidos ? (
-        <div className="text-center py-16 text-slate-400">
-          <RefreshCw size={32} className="animate-spin mx-auto mb-3 text-cyan-500" />
-          <p>Cargando historial...</p>
-        </div>
-      ) : pedidos.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-slate-900/40 p-12 text-center">
-          <ClipboardList size={52} className="mx-auto mb-4 text-slate-600 opacity-40" />
-          <h3 className="text-xl font-bold text-white mb-2">Sin pedidos registrados</h3>
-          <p className="text-slate-400 text-sm mb-6">
-            Cuando confirmes un carrito, tus pedidos aparecerán aquí con su número de seguimiento.
+      {pedidos.length === 0 ? (
+        <div className="glass-panel p-12 text-center text-slate-400 rounded-3xl space-y-4">
+          <ClipboardList size={48} className="mx-auto opacity-30 text-slate-500" />
+          <h3 className="text-lg font-bold text-white font-heading">Aún no has realizado pedidos</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            Explora nuestro catálogo de tecnología y realiza tu primer pedido con entrega inmediata en Tarija.
           </p>
-          <button onClick={onBackToCatalog} className="btn btn-primary">Ir al Catálogo</button>
+          <button onClick={onBackToCatalog} className="btn btn-primary mt-2">
+            Explorar Catálogo
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
           {pedidos.map(ped => {
             const isExpanded = pedidoExpandido === ped.id_pedido;
             return (
-              <div key={ped.id_pedido} className="rounded-2xl border border-white/10 bg-slate-900/70 overflow-hidden">
-                {/* Header del pedido */}
-                <div
-                  className="flex flex-wrap justify-between items-center p-5 gap-3 cursor-pointer hover:bg-white/2 transition-colors"
-                  onClick={() => setPedidoExpandido(isExpanded ? null : ped.id_pedido)}
-                >
+              <div key={ped.id_pedido} className="glass-panel p-6 rounded-2xl space-y-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                   <div className="flex items-center gap-3">
-                    <div>
-                      <div className="flex items-center gap-2.5 mb-1">
-                        <span className="text-lg font-extrabold text-cyan-400 font-heading">{ped.numero_pedido}</span>
-                        {getBadgeEstado(ped.estado)}
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        Fecha: {ped.fecha} · {ped.detalles?.length || 0} artículo(s)
-                      </p>
-                    </div>
+                    <span className="text-base font-bold font-mono text-cyan-400">{ped.numero_pedido}</span>
+                    <span className="text-xs text-slate-400">Fecha: {ped.fecha}</span>
+                    {getBadgeEstado(ped.estado)}
                   </div>
+
                   <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">Total pagado</p>
-                      <p className="text-xl font-extrabold text-white font-heading">Bs. {ped.total.toFixed(2)}</p>
-                    </div>
-                    {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                    <span className="text-sm font-bold text-white font-mono">
+                      Total: <span className="text-cyan-400">Bs. {ped.total.toFixed(2)}</span>
+                    </span>
+
+                    <button
+                      onClick={() => setPedidoExpandido(isExpanded ? null : ped.id_pedido)}
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                    >
+                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
                   </div>
                 </div>
 
-                {/* Detalle expandible */}
                 {isExpanded && (
-                  <div className="border-t border-white/8 p-5 space-y-4">
-                    {/* Artículos */}
-                    <div>
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Artículos incluidos</p>
-                      <div className="rounded-xl border border-white/5 overflow-hidden divide-y divide-white/5">
-                        {ped.detalles?.map(det => (
-                          <div key={det.id_detalle} className="flex justify-between items-center px-4 py-2.5 text-sm bg-slate-900/50">
-                            <span className="text-slate-300">{det.producto_nombre} <span className="text-slate-500">×{det.cantidad}</span></span>
-                            <span className="font-semibold text-white">Bs. {det.subtotal.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Dirección de entrega */}
+                  <div className="pt-4 border-t border-white/10 space-y-4">
                     {ped.direccion && (
-                      <div>
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <MapPin size={12} /> Dirección de entrega
-                        </p>
-                        <div className="bg-slate-900/50 rounded-xl border border-white/5 px-4 py-3 text-sm">
-                          <p className="text-white font-semibold">{ped.direccion.nombre_receptor}</p>
-                          <p className="text-slate-400">{ped.direccion.direccion}, {ped.direccion.ciudad}</p>
-                          <p className="text-slate-500">Tel: {ped.direccion.telefono}</p>
-                        </div>
+                      <div className="text-xs text-slate-300 bg-slate-950/60 p-3.5 rounded-xl border border-white/5 space-y-1">
+                        <p className="font-bold text-cyan-400 uppercase text-[11px]">Dirección de Entrega:</p>
+                        <p>{ped.direccion.nombre_receptor} &bull; {ped.direccion.direccion}, {ped.direccion.ciudad}</p>
+                        <p className="text-slate-400">Tel: {ped.direccion.telefono}</p>
+                        {ped.nit_ci && <p className="text-amber-400">Factura: NIT {ped.nit_ci} ({ped.razon_social})</p>}
                       </div>
                     )}
+
+                    <div className="space-y-2">
+                      {ped.detalles?.map(det => (
+                        <div key={det.id_detalle} className="flex justify-between items-center text-xs p-2 rounded-lg bg-black/20">
+                          <span>{det.cantidad}x {det.producto_nombre}</span>
+                          <span className="font-mono text-slate-300">Bs. {det.subtotal.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        onClick={() => descargarTxt(generarContenidoTxt(ped, usuarioActual), ped.numero_pedido)}
+                        className="btn btn-secondary btn-sm flex items-center gap-1.5 text-xs"
+                      >
+                        <Download size={13} className="text-cyan-400" />
+                        <span>Descargar Comprobante .TXT</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

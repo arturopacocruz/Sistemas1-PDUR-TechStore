@@ -2,10 +2,26 @@ import { Pedido, DetallePedido, DireccionEntrega, EstadoPedido } from '../models
 
 export interface IPedidoRepository {
   generarNumeroPedido(): string;
-  guardarDireccion(idUsuario: number, nombreReceptor: string, direccion: string, ciudad: string, telefono: string): DireccionEntrega;
+  guardarDireccion(
+    idUsuario: number,
+    nombreReceptor: string,
+    direccion: string,
+    ciudad: string,
+    telefono: string,
+    nitCi?: string | null,
+    razonSocial?: string | null
+  ): DireccionEntrega;
   obtenerDireccionPorId(idDireccion: number): DireccionEntrega | undefined;
   obtenerDireccionesPorUsuario(idUsuario: number): DireccionEntrega[];
-  guardar(idUsuario: number, idDireccion: number, numeroPedido: string, total: number, items: { id_producto: number; cantidad: number; precio_unitario: number; subtotal: number }[]): Pedido;
+  guardar(
+    idUsuario: number,
+    idDireccion: number,
+    numeroPedido: string,
+    total: number,
+    items: { id_producto: number; cantidad: number; precio_unitario: number; subtotal: number }[],
+    nitCi?: string | null,
+    razonSocial?: string | null
+  ): Pedido;
   buscarPorId(idPedido: number): Pedido | undefined;
   buscarPorNumero(numeroPedido: string): Pedido | undefined;
   obtenerDetalles(idPedido: number): DetallePedido[];

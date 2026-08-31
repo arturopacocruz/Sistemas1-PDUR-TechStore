@@ -11,24 +11,42 @@ export class PedidoRepository implements IPedidoRepository {
     return `PED-${String(nextNumber).padStart(6, '0')}`;
   }
 
-  guardarDireccion(idUsuario: number, nombreReceptor: string, direccion: string, ciudad: string, telefono: string): DireccionEntrega {
+  guardarDireccion(
+    idUsuario: number,
+    nombreReceptor: string,
+    direccion: string,
+    ciudad: string,
+    telefono: string,
+    nitCi?: string | null,
+    razonSocial?: string | null
+  ): DireccionEntrega {
     // Cifrado en reposo para datos personales sensibles PII (Ley N° 164 / ASFI)
     const encryptedDireccion = CryptoUtil.encrypt(direccion);
     const encryptedTelefono = CryptoUtil.encrypt(telefono);
 
     const stmt = db.prepare(`
-      INSERT INTO direccion_entrega (id_usuario, nombre_receptor, direccion, ciudad, telefono)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO direccion_entrega (id_usuario, nombre_receptor, direccion, ciudad, telefono, nit_ci, razon_social)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(idUsuario, nombreReceptor, encryptedDireccion, ciudad, encryptedTelefono);
+    const info = stmt.run(
+      idUsuario,
+      nombreReceptor,
+      encryptedDireccion,
+      ciudad,
+      encryptedTelefono,
+      nitCi ? nitCi.trim() : null,
+      razonSocial ? razonSocial.trim() : null
+    );
 
     return {
       id_direccion: Number(info.lastInsertRowid),
       id_usuario: idUsuario,
       nombre_receptor: nombreReceptor,
-      direccion, // Retornar en memoria descifrado para el flujo activo
+      direccion,
       ciudad,
-      telefono
+      telefono,
+      nit_ci: nitCi ? nitCi.trim() : null,
+      razon_social: razonSocial ? razonSocial.trim() : null
     };
   }
 
@@ -54,7 +72,15 @@ export class PedidoRepository implements IPedidoRepository {
     }));
   }
 
-  guardar(idUsuario: number, idDireccion: number, numeroPedido: string, total: number, items: { id_producto: number; cantidad: number; precio_unitario: number; subtotal: number }[]): Pedido {
+  guardar(
+    idUsuario: number,
+    idDireccion: number,
+    numeroPedido: string,
+    total: number,
+    items: { id_producto: number; cantidad: number; precio_unitario: number; subtotal: number }[],
+    nitCi?: string | null,
+    razonSocial?: string | null
+  ): Pedido {
     const insertTransaction = db.transaction(() => {
       // 1. Sello de Integridad Criptográfico (SHA-256 HMAC) para el contrato digital (Ley N° 164)
       const timestamp = new Date().toISOString();
@@ -64,15 +90,25 @@ export class PedidoRepository implements IPedidoRepository {
         id_direccion: idDireccion,
         total,
         items,
+        nit_ci: nitCi,
+        razon_social: razonSocial,
         timestamp
       });
 
-      // 2. Insert Pedido con hash_integridad
+      // 2. Insert Pedido con hash_integridad y datos de facturación
       const insertPedidoStmt = db.prepare(`
-        INSERT INTO pedido (numero_pedido, id_usuario, id_direccion, estado, total, hash_integridad)
-        VALUES (?, ?, ?, 'Confirmado', ?, ?)
+        INSERT INTO pedido (numero_pedido, id_usuario, id_direccion, estado, total, hash_integridad, nit_ci, razon_social)
+        VALUES (?, ?, ?, 'Confirmado', ?, ?, ?, ?)
       `);
-      const info = insertPedidoStmt.run(numeroPedido, idUsuario, idDireccion, total, hashIntegridad);
+      const info = insertPedidoStmt.run(
+        numeroPedido,
+        idUsuario,
+        idDireccion,
+        total,
+        hashIntegridad,
+        nitCi ? nitCi.trim() : null,
+        razonSocial ? razonSocial.trim() : null
+      );
       const idPedido = Number(info.lastInsertRowid);
 
       // 3. Insert DetallePedido and update stock

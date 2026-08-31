@@ -32,15 +32,24 @@ export class PedidoController {
    */
   confirmarPedido = (req: Request, res: Response): void => {
     try {
-      const { id_usuario, nombre_receptor, direccion, ciudad, telefono } = req.body;
+      const { id_usuario, nombre_receptor, direccion, ciudad, telefono, nit_ci, razon_social } = req.body;
       const idUsuario = Number(id_usuario || 1);
+      const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+      const userAgent = req.headers['user-agent'] || 'TechStore-Client';
 
-      const nuevoPedido = this.pedidoService.confirmarPedido(idUsuario, {
-        nombre_receptor,
-        direccion,
-        ciudad,
-        telefono
-      });
+      const nuevoPedido = this.pedidoService.confirmarPedido(
+        idUsuario,
+        {
+          nombre_receptor,
+          direccion,
+          ciudad,
+          telefono,
+          nit_ci,
+          razon_social
+        },
+        ip,
+        userAgent
+      );
 
       res.status(201).json({
         message: 'Pedido realizado con éxito',

@@ -40,7 +40,12 @@ export class PedidoService {
     return { ok: true };
   }
 
-  confirmarPedido(idUsuario: number, datosEntrega: Omit<DireccionEntrega, 'id_direccion' | 'id_usuario'>, ipOrigen = '127.0.0.1', userAgent = 'TechStore-Client'): Pedido {
+  confirmarPedido(
+    idUsuario: number,
+    datosEntrega: Omit<DireccionEntrega, 'id_direccion' | 'id_usuario'>,
+    ipOrigen = '127.0.0.1',
+    userAgent = 'TechStore-Client'
+  ): Pedido {
     const validacion = PedidoValidator.validarDireccionEntrega(datosEntrega);
     if (!validacion.valido) {
       AuditService.registrar({
@@ -81,7 +86,9 @@ export class PedidoService {
       datosEntrega.nombre_receptor.trim(),
       datosEntrega.direccion.trim(),
       datosEntrega.ciudad.trim(),
-      datosEntrega.telefono.trim()
+      datosEntrega.telefono.trim(),
+      datosEntrega.nit_ci,
+      datosEntrega.razon_social
     );
 
     const numeroPedido = this.pedidoRepository.generarNumeroPedido();
@@ -98,7 +105,9 @@ export class PedidoService {
       direccion.id_direccion!,
       numeroPedido,
       total,
-      itemsParaGuardar
+      itemsParaGuardar,
+      datosEntrega.nit_ci,
+      datosEntrega.razon_social
     );
 
     this.carritoRepository.actualizarEstado(carrito.id_carrito, 'Confirmado');
@@ -116,7 +125,8 @@ export class PedidoService {
         total: nuevoPedido.total,
         articulos_count: itemsParaGuardar.length,
         hash_integridad: nuevoPedido.hash_integridad,
-        receptor_mask: CryptoUtil.maskPhone(datosEntrega.telefono)
+        receptor_mask: CryptoUtil.maskPhone(datosEntrega.telefono),
+        facturacion: datosEntrega.nit_ci ? { nit: datosEntrega.nit_ci, razon: datosEntrega.razon_social } : 'Sin factura'
       }
     });
 

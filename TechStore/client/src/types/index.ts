@@ -1,4 +1,5 @@
 export type RolUsuario = 'CLIENTE' | 'ADMINISTRADOR';
+export type EstadoUsuario = 'Activo' | 'Inactivo';
 
 export interface Usuario {
   id_usuario: number;
@@ -6,6 +7,7 @@ export interface Usuario {
   email: string;
   telefono?: string | null;
   rol: RolUsuario;
+  estado?: EstadoUsuario;
   fecha_registro: string;
 }
 
@@ -62,6 +64,8 @@ export interface DireccionEntrega {
   direccion: string;
   ciudad: string;
   telefono: string;
+  nit_ci?: string | null;
+  razon_social?: string | null;
 }
 
 export type EstadoPedido = 'Pendiente' | 'Confirmado' | 'Preparando' | 'Entregado' | 'Rechazado';
@@ -84,6 +88,9 @@ export interface Pedido {
   fecha: string;
   estado: EstadoPedido;
   total: number;
+  hash_integridad?: string;
+  nit_ci?: string | null;
+  razon_social?: string | null;
   cliente_nombre?: string;
   cliente_email?: string;
   direccion?: DireccionEntrega;
@@ -97,4 +104,18 @@ export interface MetricasAdmin {
   inactivos: number;
   totalStock: number;
   bajoStock: Producto[];
+}
+
+export interface LogAuditoria {
+  id_log: number;
+  id_usuario?: number | null;
+  ip_origen: string;
+  user_agent?: string | null;
+  accion: string;
+  entidad_afectada: string;
+  id_entidad?: string | null;
+  detalles?: any;
+  hash_integridad: string;
+  fecha_utc: string;
+  usuario_nombre?: string;
 }

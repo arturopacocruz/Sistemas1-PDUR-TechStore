@@ -1,4 +1,5 @@
 export type RolUsuario = 'CLIENTE' | 'ADMINISTRADOR';
+export type EstadoUsuario = 'Activo' | 'Inactivo';
 
 export interface Usuario {
   id_usuario: number;
@@ -7,6 +8,7 @@ export interface Usuario {
   telefono?: string | null;
   password_hash?: string;
   rol: RolUsuario;
+  estado: EstadoUsuario;
   fecha_registro: string;
 }
 
@@ -63,6 +65,8 @@ export interface DireccionEntrega {
   direccion: string;
   ciudad: string;
   telefono: string;
+  nit_ci?: string | null;
+  razon_social?: string | null;
 }
 
 export type EstadoPedido = 'Pendiente' | 'Confirmado' | 'Preparando' | 'Entregado' | 'Rechazado';
@@ -76,6 +80,8 @@ export interface Pedido {
   estado: EstadoPedido;
   total: number;
   hash_integridad?: string; // Sello criptográfico SHA-256 HMAC (Ley N° 164)
+  nit_ci?: string | null;
+  razon_social?: string | null;
   cliente_nombre?: string;
   cliente_email?: string;
   direccion?: DireccionEntrega;

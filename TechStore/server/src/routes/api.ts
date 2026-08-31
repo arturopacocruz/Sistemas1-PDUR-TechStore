@@ -46,8 +46,13 @@ router.patch('/pedidos/:id/estado', pedidoController.actualizarEstado);
 // Usuarios y Autenticación
 router.get('/usuarios', usuarioController.listar);
 router.get('/usuarios/:id', usuarioController.obtenerPorId);
+router.post('/usuarios', usuarioController.crearPorAdmin);
+router.put('/usuarios/:id', usuarioController.actualizar);
+router.patch('/usuarios/:id/estado', usuarioController.cambiarEstado);
 router.post('/auth/login', usuarioController.login);
 router.post('/usuarios/login', usuarioController.login);
+router.post('/auth/register', usuarioController.registro);
+router.post('/usuarios/registro', usuarioController.registro);
 
 // Auditoría ASFI / Seguridad
 import { AuditService } from '../services/AuditService.js';
