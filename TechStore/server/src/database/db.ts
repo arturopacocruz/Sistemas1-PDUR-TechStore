@@ -143,6 +143,35 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_audit_accion ON logs_auditoria(accion);
   `);
 
+  // Migración automática de columnas para bases de datos SQLite preexistentes
+  try {
+    const colsDireccion = db.prepare("PRAGMA table_info(direccion_entrega)").all() as { name: string }[];
+    const namesDir = colsDireccion.map(c => c.name);
+    if (!namesDir.includes('nit_ci')) {
+      db.exec("ALTER TABLE direccion_entrega ADD COLUMN nit_ci TEXT;");
+    }
+    if (!namesDir.includes('razon_social')) {
+      db.exec("ALTER TABLE direccion_entrega ADD COLUMN razon_social TEXT;");
+    }
+
+    const colsPedido = db.prepare("PRAGMA table_info(pedido)").all() as { name: string }[];
+    const namesPed = colsPedido.map(c => c.name);
+    if (!namesPed.includes('nit_ci')) {
+      db.exec("ALTER TABLE pedido ADD COLUMN nit_ci TEXT;");
+    }
+    if (!namesPed.includes('razon_social')) {
+      db.exec("ALTER TABLE pedido ADD COLUMN razon_social TEXT;");
+    }
+
+    const colsUsuario = db.prepare("PRAGMA table_info(usuario)").all() as { name: string }[];
+    const namesUser = colsUsuario.map(c => c.name);
+    if (!namesUser.includes('estado')) {
+      db.exec("ALTER TABLE usuario ADD COLUMN estado TEXT NOT NULL DEFAULT 'Activo';");
+    }
+  } catch (migErr) {
+    console.error('[Database Migration]', migErr);
+  }
+
   // Semillas si la base de datos está vacía
   const userCount = db.prepare('SELECT count(*) as count FROM usuario').get() as { count: number };
   if (userCount.count === 0) {
