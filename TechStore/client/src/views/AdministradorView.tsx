@@ -105,7 +105,7 @@ export const AdministradorView: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
+    <div className="page-container">
       {/* Admin Header */}
       <div
         style={{
@@ -113,19 +113,19 @@ export const AdministradorView: React.FC = () => {
           flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '16px',
-          marginBottom: '28px'
+          gap: '20px',
+          marginBottom: '36px'
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <span className="badge badge-warning">Modo Administrador</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>HU-04: Gestión de Catálogo</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>HU-04: Gestión de Catálogo e Inventario</span>
           </div>
-          <h1 style={{ fontSize: '2.2rem' }}>Panel de Control & Reporte Visual</h1>
+          <h1 style={{ fontSize: '2.5rem' }}>Panel de Control & Reportes</h1>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '14px' }}>
           <button onClick={cargarDatosAdmin} className="btn btn-secondary btn-sm" title="Refrescar">
             <RefreshCw size={16} />
             <span>Refrescar</span>
@@ -148,53 +148,53 @@ export const AdministradorView: React.FC = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '20px',
-            marginBottom: '32px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '24px',
+            marginBottom: '40px'
           }}
         >
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Total Productos</span>
-              <Package size={20} color="var(--accent-cyan)" />
+          <div className="glass-panel" style={{ padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Productos</span>
+              <Package size={22} color="var(--accent-cyan)" />
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{metricas.totalProductos}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>{metricas.totalProductos}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>
               {metricas.activos} activos · {metricas.inactivos} inactivos
             </div>
           </div>
 
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Unidades en Inventario</span>
-              <Layers size={20} color="var(--accent-blue)" />
+          <div className="glass-panel" style={{ padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Unidades en Inventario</span>
+              <Layers size={22} color="var(--accent-blue)" />
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{metricas.totalStock}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Stock total registrado
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>{metricas.totalStock}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              Stock total registrado en tienda
             </div>
           </div>
 
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Bajo Stock / Agotados</span>
-              <AlertTriangle size={20} color={metricas.agotados > 0 ? 'var(--danger)' : 'var(--warning)'} />
+          <div className="glass-panel" style={{ padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Bajo Stock / Agotados</span>
+              <AlertTriangle size={22} color={metricas.agotados > 0 ? 'var(--danger)' : 'var(--warning)'} />
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: metricas.agotados > 0 ? '#f87171' : '#fbbf24' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: metricas.agotados > 0 ? '#f87171' : '#fbbf24', fontFamily: 'var(--font-heading)' }}>
               {metricas.agotados + metricas.bajoStock.length}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>
               {metricas.agotados} agotados · {metricas.bajoStock.length} por reabastecer
             </div>
           </div>
 
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Pedidos Realizados</span>
-              <TrendingUp size={20} color="var(--success)" />
+          <div className="glass-panel" style={{ padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pedidos Realizados</span>
+              <TrendingUp size={22} color="var(--success)" />
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{pedidos.length}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>{pedidos.length}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>
               Total transacciones del MVP
             </div>
           </div>
@@ -202,7 +202,7 @@ export const AdministradorView: React.FC = () => {
       )}
 
       {/* Sub-nav switcher */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '28px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
         <button
           onClick={() => setAdminTab('catalogo')}
           className={`btn btn-sm ${adminTab === 'catalogo' ? 'btn-primary' : 'btn-secondary'}`}

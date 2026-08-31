@@ -180,66 +180,66 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
   // ── 1. Pantalla de Confirmación (HU-03 UC9) ──────────────────────────────
   if (pedidoConfirmado) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/70 p-8 text-center shadow-xl shadow-emerald-500/5">
+      <div className="page-container" style={{ maxWidth: '780px' }}>
+        <div className="rounded-3xl border border-emerald-500/25 bg-slate-900/80 p-10 md:p-12 text-center shadow-xl shadow-emerald-500/5 space-y-6">
           {/* Success icon */}
-          <div className="w-20 h-20 rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-2">
             <CheckCircle2 size={44} className="text-emerald-400" />
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
             Pedido Registrado con Éxito
           </span>
 
-          <h2 className="text-3xl font-extrabold text-white font-heading mb-2">¡Gracias por tu compra!</h2>
-          <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-            Tu pedido fue confirmado y el stock fue descontado en tiempo real.
-            Recibirás tu pedido en Tarija según la dirección indicada.
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white font-heading">¡Gracias por tu compra!</h2>
+          <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+            Tu pedido fue confirmado y el inventario fue descontado en tiempo real.
+            Recibirás tus productos en Tarija según la dirección indicada.
           </p>
 
           {/* Número de pedido autogenerado (HU-03 UC8) */}
-          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/8 p-5 mb-6">
-            <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Número de Identificación del Pedido</p>
-            <p className="text-3xl font-extrabold text-cyan-400 font-heading tracking-widest mb-1">
+          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-6">
+            <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-2">Número de Identificación del Pedido</p>
+            <p className="text-3xl md:text-4xl font-extrabold text-cyan-400 font-heading tracking-widest mb-2">
               {pedidoConfirmado.numero_pedido}
             </p>
-            <p className="text-xs text-slate-500">
-              Fecha: {pedidoConfirmado.fecha} · Total: <span className="text-white font-semibold">Bs. {pedidoConfirmado.total.toFixed(2)}</span>
+            <p className="text-xs text-slate-400">
+              Fecha: {pedidoConfirmado.fecha} · Total: <span className="text-white font-bold text-sm">Bs. {pedidoConfirmado.total.toFixed(2)}</span>
             </p>
           </div>
 
           {/* Dirección de entrega */}
           {pedidoConfirmado.direccion && (
-            <div className="rounded-xl border border-white/8 bg-slate-800/50 p-4 mb-8 text-left text-sm">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                <MapPin size={12} />
-                Dirección de Entrega
+            <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-5 text-left text-sm space-y-1">
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2 mb-2">
+                <MapPin size={14} />
+                Dirección de Entrega Registrada
               </p>
-              <p className="text-white font-semibold">{pedidoConfirmado.direccion.nombre_receptor}</p>
-              <p className="text-slate-400">{pedidoConfirmado.direccion.direccion}, {pedidoConfirmado.direccion.ciudad}</p>
+              <p className="text-white font-bold text-base">{pedidoConfirmado.direccion.nombre_receptor}</p>
+              <p className="text-slate-300">{pedidoConfirmado.direccion.direccion}, {pedidoConfirmado.direccion.ciudad}</p>
               <p className="text-slate-400">Tel: {pedidoConfirmado.direccion.telefono}</p>
             </div>
           )}
 
           {/* Detalle de productos del pedido */}
           {pedidoConfirmado.detalles && pedidoConfirmado.detalles.length > 0 && (
-            <div className="rounded-xl border border-white/8 bg-slate-800/30 divide-y divide-white/5 mb-8 text-left text-sm overflow-hidden">
+            <div className="rounded-2xl border border-white/10 bg-slate-800/40 divide-y divide-white/5 text-left text-sm overflow-hidden">
               {pedidoConfirmado.detalles.map(det => (
-                <div key={det.id_detalle} className="flex justify-between items-center px-4 py-2.5">
-                  <span className="text-slate-300">{det.producto_nombre} <span className="text-slate-500">×{det.cantidad}</span></span>
-                  <span className="text-white font-semibold">Bs. {det.subtotal.toFixed(2)}</span>
+                <div key={det.id_detalle} className="flex justify-between items-center px-5 py-3">
+                  <span className="text-slate-200 font-medium">{det.producto_nombre} <span className="text-slate-400 text-xs font-bold">×{det.cantidad}</span></span>
+                  <span className="text-cyan-300 font-bold">Bs. {det.subtotal.toFixed(2)}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* Cumplimiento Ley N° 164 */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-900/60 rounded-lg px-3 py-2 mb-6">
-            <Lock size={13} className="text-cyan-400 shrink-0" />
-            <span>Cumplimiento <strong className="text-slate-300">Ley N° 164</strong>: Este pedido constituye un comprobante de compraventa electrónico con validez legal en Bolivia.</span>
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-950/70 rounded-xl px-4 py-3 border border-white/5">
+            <Lock size={14} className="text-cyan-400 shrink-0" />
+            <span>Cumplimiento <strong className="text-slate-200">Ley N° 164</strong>: Este pedido constituye un comprobante de compraventa electrónico con validez legal en Bolivia.</span>
           </div>
 
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-wrap gap-4 justify-center pt-2">
             <button onClick={() => setPedidoConfirmado(null)} className="btn btn-secondary">
               Ver Historial de Pedidos
             </button>
@@ -255,13 +255,13 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
   // ── 2. Formulario de Checkout (HU-03 UC3 + UC4) ──────────────────────────
   if (mostrarCheckout) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="page-container" style={{ maxWidth: '1100px' }}>
         <button
           onClick={() => setMostrarCheckout(false)}
-          className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-6"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition-colors mb-8 px-3 py-1.5 rounded-lg hover:bg-white/5 w-fit"
         >
-          <ArrowLeft size={15} />
-          Volver al Carrito
+          <ArrowLeft size={16} />
+          <span>Volver al Carrito</span>
         </button>
 
         {/* HU-03: Carrito vacío no puede hacer checkout (Criterio 1) */}
@@ -275,31 +275,31 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
             </div>
           </div>
         ) : (
-          <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+          <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }}>
 
             {/* ── Formulario de datos de entrega (HU-03 UC3) ── */}
-            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6 font-heading">
-                <MapPin size={20} className="text-cyan-400" />
-                Datos de Entrega
-                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/25 text-cyan-400 font-mono">HU-03</span>
+            <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-md">
+              <h2 className="text-xl font-bold text-white flex items-center gap-3 mb-6 font-heading">
+                <MapPin size={22} className="text-cyan-400" />
+                <span>Datos de Entrega</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/25 text-cyan-400 font-mono">HU-03</span>
               </h2>
 
-              {/* Error global (ej: stock insuficiente en el momento del checkout) */}
+              {/* Error global */}
               {errorCheckout && (
-                <div className="flex items-start gap-2.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-xl px-4 py-3 mb-5 text-sm">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-2xl p-4 mb-6 text-sm">
+                  <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-400" />
                   <span>{errorCheckout}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmitCheckout} noValidate className="space-y-4">
+              <form onSubmit={handleSubmitCheckout} noValidate className="space-y-5">
 
-                {/* Nombre receptor (DD §4.6: VARCHAR(100) NOT NULL) */}
-                <div>
-                  <label htmlFor="hu03-nombre" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    <User size={12} />
-                    Nombre de quien recibe *
+                {/* Nombre receptor */}
+                <div className="space-y-2">
+                  <label htmlFor="hu03-nombre" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    <User size={13} className="text-cyan-400" />
+                    <span>Nombre de quien recibe *</span>
                   </label>
                   <input
                     id="hu03-nombre"
@@ -309,24 +309,24 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
                     value={formData.nombre_receptor}
                     onChange={e => handleChange('nombre_receptor', e.target.value)}
                     onBlur={() => handleBlur('nombre_receptor')}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-white placeholder-slate-600 bg-slate-900/60 focus:outline-none focus:ring-1 transition-all ${
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all ${
                       formErrors.nombre_receptor
                         ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/10 focus:border-cyan-500/50 focus:ring-cyan-500/30'
+                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
                     }`}
                   />
                   {formErrors.nombre_receptor && (
-                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1">
-                      <AlertCircle size={11} />{formErrors.nombre_receptor}
+                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1.5">
+                      <AlertCircle size={12} /><span>{formErrors.nombre_receptor}</span>
                     </p>
                   )}
                 </div>
 
-                {/* Teléfono (DD §4.6: VARCHAR(20) NOT NULL) */}
-                <div>
-                  <label htmlFor="hu03-telefono" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    <Phone size={12} />
-                    Teléfono de contacto *
+                {/* Teléfono */}
+                <div className="space-y-2">
+                  <label htmlFor="hu03-telefono" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    <Phone size={13} className="text-cyan-400" />
+                    <span>Teléfono de contacto *</span>
                   </label>
                   <input
                     id="hu03-telefono"
@@ -336,24 +336,24 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
                     value={formData.telefono}
                     onChange={e => handleChange('telefono', e.target.value)}
                     onBlur={() => handleBlur('telefono')}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-white placeholder-slate-600 bg-slate-900/60 focus:outline-none focus:ring-1 transition-all ${
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all ${
                       formErrors.telefono
                         ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/10 focus:border-cyan-500/50 focus:ring-cyan-500/30'
+                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
                     }`}
                   />
                   {formErrors.telefono && (
-                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1">
-                      <AlertCircle size={11} />{formErrors.telefono}
+                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1.5">
+                      <AlertCircle size={12} /><span>{formErrors.telefono}</span>
                     </p>
                   )}
                 </div>
 
-                {/* Ciudad (DD §4.6: VARCHAR(100) NOT NULL) */}
-                <div>
-                  <label htmlFor="hu03-ciudad" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    <MapPin size={12} />
-                    Ciudad *
+                {/* Ciudad */}
+                <div className="space-y-2">
+                  <label htmlFor="hu03-ciudad" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    <MapPin size={13} className="text-cyan-400" />
+                    <span>Ciudad *</span>
                   </label>
                   <input
                     id="hu03-ciudad"
@@ -363,24 +363,24 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
                     value={formData.ciudad}
                     onChange={e => handleChange('ciudad', e.target.value)}
                     onBlur={() => handleBlur('ciudad')}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-white placeholder-slate-600 bg-slate-900/60 focus:outline-none focus:ring-1 transition-all ${
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all ${
                       formErrors.ciudad
                         ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/10 focus:border-cyan-500/50 focus:ring-cyan-500/30'
+                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
                     }`}
                   />
                   {formErrors.ciudad && (
-                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1">
-                      <AlertCircle size={11} />{formErrors.ciudad}
+                    <p className="text-rose-400 text-xs mt-1 flex items-center gap-1.5">
+                      <AlertCircle size={12} /><span>{formErrors.ciudad}</span>
                     </p>
                   )}
                 </div>
 
-                {/* Dirección (DD §4.6: VARCHAR(255) NOT NULL) */}
-                <div>
-                  <label htmlFor="hu03-direccion" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    <Home size={12} />
-                    Dirección física exacta *
+                {/* Dirección */}
+                <div className="space-y-2">
+                  <label htmlFor="hu03-direccion" className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    <Home size={13} className="text-cyan-400" />
+                    <span>Dirección física exacta *</span>
                   </label>
                   <textarea
                     id="hu03-direccion"
@@ -390,18 +390,18 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
                     value={formData.direccion}
                     onChange={e => handleChange('direccion', e.target.value)}
                     onBlur={() => handleBlur('direccion')}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-white placeholder-slate-600 bg-slate-900/60 focus:outline-none focus:ring-1 transition-all resize-none ${
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-slate-500 bg-slate-950/60 focus:outline-none focus:ring-2 transition-all resize-none ${
                       formErrors.direccion
                         ? 'border-rose-500/60 focus:ring-rose-500/30'
-                        : 'border-white/10 focus:border-cyan-500/50 focus:ring-cyan-500/30'
+                        : 'border-white/15 focus:border-cyan-500 focus:ring-cyan-500/20'
                     }`}
                   />
-                  <div className="flex justify-between mt-0.5">
+                  <div className="flex justify-between mt-1">
                     {formErrors.direccion
-                      ? <p className="text-rose-400 text-xs flex items-center gap-1"><AlertCircle size={11} />{formErrors.direccion}</p>
+                      ? <p className="text-rose-400 text-xs flex items-center gap-1.5"><AlertCircle size={12} /><span>{formErrors.direccion}</span></p>
                       : <span />
                     }
-                    <span className="text-[10px] text-slate-600">{formData.direccion.length}/255</span>
+                    <span className="text-xs text-slate-400">{formData.direccion.length}/255</span>
                   </div>
                 </div>
 
@@ -410,45 +410,45 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
                   type="submit"
                   id="hu03-confirmar"
                   disabled={procesando}
-                  className="w-full btn btn-primary py-3 text-sm font-bold shadow-lg shadow-cyan-500/20 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                  className="w-full btn btn-primary py-3.5 text-base font-bold shadow-lg shadow-cyan-500/20 disabled:opacity-60 disabled:cursor-not-allowed mt-4"
                 >
                   {procesando ? (
-                    <><RefreshCw size={15} className="animate-spin" /> Verificando stock y procesando...</>
+                    <><RefreshCw size={16} className="animate-spin" /><span>Verificando stock y procesando...</span></>
                   ) : (
-                    <><CheckCircle2 size={15} /> Confirmar Pedido · Bs. {total.toFixed(2)}</>
+                    <><CheckCircle2 size={16} /><span>Confirmar Pedido · Bs. {total.toFixed(2)}</span></>
                   )}
                 </button>
 
-                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 text-center">
-                  <Lock size={12} className="text-cyan-400 shrink-0" />
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-400 text-center pt-2">
+                  <Lock size={13} className="text-cyan-400 shrink-0" />
                   <span>Ley N° 164: La confirmación genera un comprobante electrónico con validez legal.</span>
                 </div>
               </form>
             </div>
 
-            {/* ── Resumen de la orden (HU-03 UC2 + UC6) ── */}
-            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6 h-fit">
-              <h3 className="text-base font-bold text-white flex items-center gap-2 mb-5 font-heading">
-                <ShoppingBag size={18} className="text-cyan-400" />
-                Resumen de la Orden
+            {/* ── Resumen de la orden ── */}
+            <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-8 h-fit shadow-md space-y-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2.5 font-heading">
+                <ShoppingBag size={20} className="text-cyan-400" />
+                <span>Resumen de la Orden</span>
               </h3>
-              <div className="space-y-3 mb-5">
+              <div className="space-y-4 divide-y divide-white/5">
                 {items.map(item => (
-                  <div key={item.id_item} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                  <div key={item.id_item} className="flex justify-between items-center pt-3 first:pt-0">
                     <div>
-                      <p className="text-sm font-medium text-white leading-tight">{item.producto?.nombre}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{item.cantidad} × Bs. {item.precio_unitario.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-white leading-snug">{item.producto?.nombre}</p>
+                      <p className="text-xs text-slate-400 mt-1">{item.cantidad} × Bs. {item.precio_unitario.toFixed(2)}</p>
                     </div>
-                    <span className="text-sm font-bold text-cyan-400 shrink-0 ml-3">Bs. {item.subtotal.toFixed(2)}</span>
+                    <span className="text-sm font-bold text-cyan-400 shrink-0 ml-4">Bs. {item.subtotal.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                <span className="text-sm font-semibold text-slate-300">Total Final</span>
-                <span className="text-2xl font-extrabold text-white font-heading">Bs. {total.toFixed(2)}</span>
+              <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                <span className="text-base font-bold text-slate-300">Total Final</span>
+                <span className="text-3xl font-extrabold text-white font-heading">Bs. {total.toFixed(2)}</span>
               </div>
-              <div className="mt-4 rounded-xl bg-cyan-500/8 border border-cyan-500/20 p-3 text-xs text-slate-400">
-                El stock de los productos se descuenta en el momento de confirmación del pedido.
+              <div className="rounded-2xl bg-cyan-500/10 border border-cyan-500/20 p-4 text-xs text-slate-300 leading-relaxed">
+                El inventario de los productos se descuenta en el momento exacto de confirmación del pedido.
               </div>
             </div>
           </div>
@@ -459,12 +459,12 @@ export const PedidoView: React.FC<PedidoViewProps> = ({ onBackToCatalog, isCheck
 
   // ── 3. Historial de Pedidos del Usuario ───────────────────────────────────
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-extrabold text-white font-heading mb-1">Mis Pedidos</h1>
+    <div className="page-container" style={{ maxWidth: '960px' }}>
+      <div className="flex flex-wrap justify-between items-center gap-6 mb-10 pb-4 border-b border-white/10">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-extrabold text-white font-heading">Mis Pedidos</h1>
           <p className="text-slate-400 text-sm">
-            Historial de <strong className="text-white">{usuarioActual?.nombre}</strong>
+            Historial de compras de <strong className="text-white">{usuarioActual?.nombre}</strong>
           </p>
         </div>
         {items.length > 0 && (
