@@ -9,13 +9,100 @@
 ## 1. Visión y Objetivos
 
 **Contexto del Problema:**
-Actualmente, la búsqueda de productos y la gestión de pedidos de artículos tecnológicos (teclados, mouse, audífonos, etc.) se realizan de manera manual. Esto genera dificultades para que los clientes encuentren productos, conozcan su disponibilidad en tiempo real y organicen sus compras de forma autónoma.
+Actualmente, la búsqueda de productos y la gestión de pedidos de artículos tecnológicos (teclados, mouse, audífonos, etc.) en Tarija se realizan de manera manual y desorganizada. Esto genera dificultades para que los clientes encuentren productos, conozcan su disponibilidad en tiempo real y organicen sus compras con validez jurídica.
+
+### 1.1. Árbol de Problemas (Nodo Problematizador)
+
+```mermaid
+graph TD
+    %% EFECTOS / CONSECUENCIAS (COPA Y RAMAS)
+    subgraph EFECTOS ["🍃 EFECTOS Y CONSECUENCIAS (Nivel Superior)"]
+        E1["Pérdida de ventas e insatisfacción de clientes en Tarija"]
+        E2["Inconsistencias contables y cobros erróneos"]
+        E3["Falta de validez probatoria y reclamos comerciales"]
+        E4["Pérdida de competitividad frente al comercio formal"]
+    end
+
+    %% PROBLEMA CENTRAL (TRONCO)
+    subgraph TRONCO ["🪵 PROBLEMA CENTRAL (Tronco)"]
+        PC["Ineficiencia, lentitud y desorganización en el proceso de búsqueda, cotización y gestión de pedidos de productos tecnológicos en Tarija"]
+    end
+
+    %% CAUSAS RAÍZ (RAÍCES)
+    subgraph CAUSAS ["🌱 CAUSAS RAÍZ (Raíces)"]
+        C1["Causa 1: Catálogo disperso y desconocimiento de existencias en tiempo real"]
+        C2["Causa 2: Cotización manual lenta y cálculo propenso a errores humanos"]
+        C3["Causa 3: Toma de pedidos informal sin comprobantes ni respaldo legal"]
+        C4["Causa 4: Descontrol de inventario y desactualización del catálogo del comerciante"]
+    end
+
+    %% CONEXIONES DEL ÁRBOL
+    C1 --> PC
+    C2 --> PC
+    C3 --> PC
+    C4 --> PC
+
+    PC --> E1
+    PC --> E2
+    PC --> E3
+    PC --> E4
+```
+
+### 1.2. Árbol de Soluciones / Objetivos
+
+```mermaid
+graph TD
+    %% FINES (NIVEL SUPERIOR)
+    subgraph FINES ["🌟 FINES E IMPACTO ESPERADO (Nivel Superior)"]
+        F1["Incremento de ventas y alta fidelización de clientes en Tarija"]
+        F2["Transparencia contable y precisión exacta en cobros y facturación"]
+        F3["Plena validez probatoria, respaldo jurídico y cero reclamos"]
+        F4["Mayor competitividad e inclusión en la economía digital formal"]
+    end
+
+    %% OBJETIVO CENTRAL (TRONCO)
+    subgraph PROPOSITO ["🎯 PROPÓSITO / OBJETIVO CENTRAL (Tronco)"]
+        OC["Eficiencia, rapidez y organización integral en el proceso de búsqueda, cotización y gestión de pedidos de productos tecnológicos en Tarija"]
+    end
+
+    %% MEDIOS / COMPONENTES (RAÍCES)
+    subgraph MEDIOS ["🛠️ MEDIOS / COMPONENTES DE SOLUCIÓN (Raíces)"]
+        M1["Medio 1: Catálogo web centralizado con búsqueda en tiempo real y stock visible"]
+        M2["Medio 2: Carrito reactivo con cálculo automático de totales y control de existencias"]
+        M3["Medio 3: Checkout formal con emisión de comprobante y Sello SHA-256 (Ley N° 164)"]
+        M4["Medio 4: Panel administrativo con dashboard de métricas, control de inventario y Soft-Delete"]
+    end
+
+    %% CONEXIONES DE SOLUCIÓN
+    M1 --> OC
+    M2 --> OC
+    M3 --> OC
+    M4 --> OC
+
+    OC --> F1
+    OC --> F2
+    OC --> F3
+    OC --> F4
+```
+
+### 1.3. Trazabilidad: Causas del Árbol ➔ Historias de Usuario (MVP)
+
+| Causa Raíz del Problema | Medio de Solución | Historia de Usuario (MVP) | Solución Técnica en el Sistema |
+| :--- | :--- | :--- | :--- |
+| **Causa 1:** Catálogo disperso y stock desconocido. | **Medio 1:** Catálogo centralizado y transparente. | **HU-01: Consultar productos** | Catálogo interactivo con buscador por texto, filtro por categoría y badges de stock (`Activo` vs `Agotado`). |
+| **Causa 2:** Cotización manual y errores en cálculos. | **Medio 2:** Carrito automatizado y reactivo. | **HU-02: Agregar productos al carrito** | Carrito reactivo con cálculo automático de subtotales/totales y restricción contra el stock en BD. |
+| **Causa 3:** Pedidos informales sin respaldo legal. | **Medio 3:** Checkout con validez probatoria. | **HU-03: Realizar pedido** | Formulario de entrega, validación concurrente, código único `PED-XXXXXX` y Sello Criptográfico SHA-256 (Ley N° 164). |
+| **Causa 4:** Descontrol de inventario y desactualización. | **Medio 4:** Gestión administrativa integral. | **HU-04: Gestionar productos** | Panel administrativo con dashboard de métricas, ajuste rápido de stock y Soft-Delete para no corromper historiales. |
+
+### 1.4. Alineación con los Objetivos de Desarrollo Sostenible (ODS - CEPAL)
+* **ODS 8 (Trabajo Decente y Crecimiento Económico - Metas 8.2 y 8.3):** Impulsa la formalización y modernización de micro y pequeñas empresas comerciales en Tarija mediante la digitalización de sus canales de venta.
+* **ODS 9 (Industria, Innovación e Infraestructura - Meta 9.c):** Fomenta la adopción de tecnologías de información y comercio electrónico seguro (TICs) con estándares abiertos y protocolos criptográficos.
 
 **Visión del Producto:**
-Desarrollar "TechStore", una plataforma web sencilla e intuitiva que centralice el catálogo de productos, permita agregarlos a un carrito y facilite la realización de pedidos online.
+Desarrollar "TechStore", una plataforma web sencilla e intuitiva que centralice el catálogo de productos, permita agregarlos a un carrito y facilite la realización de pedidos online con plena validez probatoria.
 
 **Objetivo Central (SMART):**
-Desarrollar e implementar en un periodo de **2 semanas** una tienda virtual MVP (Mínimo Producto Viable) que permita a los clientes consultar productos, gestionar un carrito y realizar pedidos; y al administrador gestionar el catálogo, cumpliendo con 4 Historias de Usuario principales.
+Desarrollar e implementar en un periodo de **2 semanas** una tienda virtual MVP (Mínimo Producto Viable) que permita a los clientes consultar productos, gestionar un carrito y realizar pedidos; y al administrador gestionar el catálogo, cumpliendo con 4 Historias de Usuario principales bajo estándares de seguridad e integridad de datos.
 
 **Beneficiarios:**
 *   **Beneficiario Real (Principal):** Cliente de la tienda.
