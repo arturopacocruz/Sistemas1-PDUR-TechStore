@@ -16,7 +16,7 @@ Actualmente, la búsqueda de productos y la gestión de pedidos de artículos te
 ```mermaid
 graph TD
     %% EFECTOS / CONSECUENCIAS (COPA Y RAMAS)
-    subgraph EFECTOS ["🍃 EFECTOS Y CONSECUENCIAS (Nivel Superior)"]
+    subgraph EFECTOS ["EFECTOS Y CONSECUENCIAS (Nivel Superior)"]
         E1["Pérdida de ventas e insatisfacción de clientes en Tarija"]
         E2["Inconsistencias contables y cobros erróneos"]
         E3["Falta de validez probatoria y reclamos comerciales"]
@@ -29,7 +29,7 @@ graph TD
     end
 
     %% CAUSAS RAÍZ (RAÍCES)
-    subgraph CAUSAS ["🌱 CAUSAS RAÍZ (Raíces)"]
+    subgraph CAUSAS ["CAUSAS RAÍZ (Raíces)"]
         C1["Causa 1: Catálogo disperso y desconocimiento de existencias en tiempo real"]
         C2["Causa 2: Cotización manual lenta y cálculo propenso a errores humanos"]
         C3["Causa 3: Toma de pedidos informal sin comprobantes ni respaldo legal"]
@@ -53,7 +53,7 @@ graph TD
 ```mermaid
 graph TD
     %% FINES (NIVEL SUPERIOR)
-    subgraph FINES ["🌟 FINES E IMPACTO ESPERADO (Nivel Superior)"]
+    subgraph FINES ["FINES E IMPACTO ESPERADO (Nivel Superior)"]
         F1["Incremento de ventas y alta fidelización de clientes en Tarija"]
         F2["Transparencia contable y precisión exacta en cobros y facturación"]
         F3["Plena validez probatoria, respaldo jurídico y cero reclamos"]
@@ -61,12 +61,12 @@ graph TD
     end
 
     %% OBJETIVO CENTRAL (TRONCO)
-    subgraph PROPOSITO ["🎯 PROPÓSITO / OBJETIVO CENTRAL (Tronco)"]
+    subgraph PROPOSITO ["PROPÓSITO / OBJETIVO CENTRAL (Tronco)"]
         OC["Eficiencia, rapidez y organización integral en el proceso de búsqueda, cotización y gestión de pedidos de productos tecnológicos en Tarija"]
     end
 
     %% MEDIOS / COMPONENTES (RAÍCES)
-    subgraph MEDIOS ["🛠️ MEDIOS / COMPONENTES DE SOLUCIÓN (Raíces)"]
+    subgraph MEDIOS ["MEDIOS / COMPONENTES DE SOLUCIÓN (Raíces)"]
         M1["Medio 1: Catálogo web centralizado con búsqueda en tiempo real y stock visible"]
         M2["Medio 2: Carrito reactivo con cálculo automático de totales y control de existencias"]
         M3["Medio 3: Checkout formal con emisión de comprobante y Sello SHA-256 (Ley N° 164)"]
@@ -334,4 +334,4 @@ Tomando como referencia las mejores prácticas de la **Autoridad de Supervisión
    - Registro automatizado de eventos de seguridad en una tabla dedicada de auditoría (`audit_log`): identificación del actor (`id_usuario`), dirección IP de origen, User-Agent, fecha/hora precisa en UTC, tipo de evento (`AUTH_LOGIN`, `ORDER_CREATED`, `STOCK_UPDATED`, `PRODUCT_DEACTIVATED`, `UNAUTHORIZED_ACCESS_ATTEMPT`) y estado de la operación.
    - Protección contra manipulación de logs (*tamper-proof logging*) para servir como evidencia forense válida en procesos legales y peritajes informáticos.
 4. **Control de Acceso y Principio de Menor Privilegio (RBAC):**
-   - Segregación estricta de funciones entre `CLIENTE` y `ADMINISTRADOR` mediante tokens de acceso firmados criptográficamente (JWT con expiración corta y rotación de Refresh Tokens), previniendo vulnerabilidades de escalamiento de privilegios y accesos indebidos (**Art. 363 ter Código Penal Boliviano**).
+   - Segregación estricta de funciones entre `CLIENTE` y `ADMINISTRADOR` mediante tokens de acceso firmados criptográficamente (JWT con expiración corta y rotación de Refresh Tokens), previniendo vulnerabilidades de escalamiento de privilegios y accesos indebidos (**Art. 363 ter Código Penal Boliviano**).
