@@ -13,11 +13,11 @@ Actualmente, la búsqueda de productos y la gestión de pedidos de artículos te
 
 ### 1.1. Árbol de Problemas (Nodo Problematizador)
 
-![Árbol de Problemas](docs/design/Arbol%20de%20problemas.png)
+![Arbol de Problemas](docs/design/Arbol%20de%20problemas.png)
 
 ### 1.2. Árbol de Soluciones / Objetivos
 
-![Árbol de Soluciones](docs/design/Arbol%20de%20soluciones.png)
+![Arbol de Soluciones](docs/design/Arbol%20de%20soluciones.png)
 
 ### 1.3. Trazabilidad: Causas del Árbol ➔ Historias de Usuario (MVP)
 
