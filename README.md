@@ -102,7 +102,7 @@ Representa las principales clases utilizadas para consultar productos, incluyend
 
 > Como cliente, quiero agregar productos disponibles al carrito, indicando y modificando las cantidades, para preparar mi compra y conocer el total antes de realizar el pedido.
 
-### Diagrama de Casos de Uso
+### Diagrama de  Casos de Uso
 
 Representa las acciones que puede realizar el cliente sobre el carrito, incluyendo agregar productos, modificar cantidades, eliminar productos y consultar el total.
 
@@ -116,7 +116,7 @@ Representa la interacción entre el cliente, la interfaz, el controlador, el ser
 
 ### Diagrama de Estados
 
-Representa los estados del carrito durante el proceso de compra, desde un carrito vacío hasta un carrito con productos y su posterior confirmación.
+Representa los estados del carrito durante el proceso de compra, desde un carrito vacío hasta un carrito con productos y su posterior confirmación al cliente.
 
 ![HU-02 - Diagrama de Estados](<docs/uml/HU-2 Diagrama de estados.png>)
 
@@ -135,7 +135,7 @@ Representa las clases relacionadas con el carrito, incluyendo Cliente, Carrito, 
 
 ### Diagrama de Casos de Uso
 
-Representa las funcionalidades necesarias para realizar un pedido, incluyendo la consulta del carrito, ingreso de datos, validación, verificación de stock y confirmación.
+Representa las funcionalidades necesarias para realizar un pedido, incluyendo la consulta del carrito, ingreso de datos, validación, verificación de stock y la confirmación en este proceso.
 
 ![HU-03 - Diagrama de Casos de Uso](<docs/uml/HU-3 Diagrama de casos de uso.png>)
 
