@@ -13,77 +13,11 @@ Actualmente, la búsqueda de productos y la gestión de pedidos de artículos te
 
 ### 1.1. Árbol de Problemas (Nodo Problematizador)
 
-```mermaid
-graph TD
-    %% EFECTOS / CONSECUENCIAS (COPA Y RAMAS)
-    subgraph EFECTOS ["EFECTOS Y CONSECUENCIAS (Nivel Superior)"]
-        E1["Pérdida de ventas e insatisfacción de clientes en Tarija"]
-        E2["Inconsistencias contables y cobros erróneos"]
-        E3["Falta de validez probatoria y reclamos comerciales"]
-        E4["Pérdida de competitividad frente al comercio formal"]
-    end
-
-    %% PROBLEMA CENTRAL (TRONCO)
-    subgraph TRONCO ["🪵 PROBLEMA CENTRAL (Tronco)"]
-        PC["Ineficiencia, lentitud y desorganización en el proceso de búsqueda, cotización y gestión de pedidos de productos tecnológicos en Tarija"]
-    end
-
-    %% CAUSAS RAÍZ (RAÍCES)
-    subgraph CAUSAS ["CAUSAS RAÍZ (Raíces)"]
-        C1["Causa 1: Catálogo disperso y desconocimiento de existencias en tiempo real"]
-        C2["Causa 2: Cotización manual lenta y cálculo propenso a errores humanos"]
-        C3["Causa 3: Toma de pedidos informal sin comprobantes ni respaldo legal"]
-        C4["Causa 4: Descontrol de inventario y desactualización del catálogo del comerciante"]
-    end
-
-    %% CONEXIONES DEL ÁRBOL
-    C1 --> PC
-    C2 --> PC
-    C3 --> PC
-    C4 --> PC
-
-    PC --> E1
-    PC --> E2
-    PC --> E3
-    PC --> E4
-```
+![Árbol de Problemas](docs/design/Arbol%20de%20problemas.png)
 
 ### 1.2. Árbol de Soluciones / Objetivos
 
-```mermaid
-graph TD
-    %% FINES (NIVEL SUPERIOR)
-    subgraph FINES ["FINES E IMPACTO ESPERADO (Nivel Superior)"]
-        F1["Incremento de ventas y alta fidelización de clientes en Tarija"]
-        F2["Transparencia contable y precisión exacta en cobros y facturación"]
-        F3["Plena validez probatoria, respaldo jurídico y cero reclamos"]
-        F4["Mayor competitividad e inclusión en la economía digital formal"]
-    end
-
-    %% OBJETIVO CENTRAL (TRONCO)
-    subgraph PROPOSITO ["PROPÓSITO / OBJETIVO CENTRAL (Tronco)"]
-        OC["Eficiencia, rapidez y organización integral en el proceso de búsqueda, cotización y gestión de pedidos de productos tecnológicos en Tarija"]
-    end
-
-    %% MEDIOS / COMPONENTES (RAÍCES)
-    subgraph MEDIOS ["MEDIOS / COMPONENTES DE SOLUCIÓN (Raíces)"]
-        M1["Medio 1: Catálogo web centralizado con búsqueda en tiempo real y stock visible"]
-        M2["Medio 2: Carrito reactivo con cálculo automático de totales y control de existencias"]
-        M3["Medio 3: Checkout formal con emisión de comprobante y Sello SHA-256 (Ley N° 164)"]
-        M4["Medio 4: Panel administrativo con dashboard de métricas, control de inventario y Soft-Delete"]
-    end
-
-    %% CONEXIONES DE SOLUCIÓN
-    M1 --> OC
-    M2 --> OC
-    M3 --> OC
-    M4 --> OC
-
-    OC --> F1
-    OC --> F2
-    OC --> F3
-    OC --> F4
-```
+![Árbol de Soluciones](docs/design/Arbol%20de%20soluciones.png)
 
 ### 1.3. Trazabilidad: Causas del Árbol ➔ Historias de Usuario (MVP)
 
