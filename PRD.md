@@ -1,3 +1,17 @@
+```mermaid
+graph TD
+    C1[Causa 1] --> PC[Problema Central]
+    C2[Causa 2] --> PC
+    C3[Causa 3] --> PC
+    C4[Causa 4] --> PC
+
+    PC --> E1[Efecto 1]
+    PC --> E2[Efecto 2]
+    PC --> E3[Efecto 3]
+    PC --> E4[Efecto 4]
+```
+
+
 # Product Requirements Document (PRD) 
 **Proyecto:** TechStore MVP  
 **Rol:** Senior Product Manager  
